@@ -32,10 +32,11 @@ class Game:
     def move_bird(self, direction: Literal["UP", "DOWN"]):
         self.screen[self.bird_row_coord][BIRD_COL_COORD] = BACKGROUND_COLOUR
         bird_velocity = self.bird_velocity_rows_per_tick(direction)
+
         self.bird_row_coord = (
-            self.bird_row_coord - bird_velocity
+            int(round(self.bird_row_coord - bird_velocity, 0))
             if direction == "UP"
-            else self.bird_row_coord + bird_velocity
+            else int(round(self.bird_row_coord + bird_velocity, 0))
         )
         if self.bird_row_coord >= SCREEN_SIDE_LENGTH:
             self.bird_row_coord = SCREEN_SIDE_LENGTH - 1
