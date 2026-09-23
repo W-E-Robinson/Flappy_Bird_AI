@@ -4,8 +4,8 @@ PIP := $(VENV)/bin/pip
 BLACK := $(VENV)/bin/black
 PYRIGHT := $(VENV)/bin/pyright
 
-main:
-	$(PYTHON) ./src/main.py
+play:
+	$(PYTHON) ./src/play.py
 
 venv:
 	python3 -m venv $(VENV)
