@@ -1,10 +1,12 @@
 # Game Screen
-SCREEN_SIDE_LENGTH = 25
-BIRD_STARTING_ROW_COORD = 10
+SCREEN_SIDE_LENGTH = 40
+BIRD_STARTING_ROW_COORD = 20
 BIRD_COL_COORD = 10
 
-# Game Mechanics
-MS_PER_GAME_TICK = 100
+# Game Mechanics - to be tinkered with until game feels right
+MS_PER_GAME_TICK = 250
+GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED = 3
+VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK = 4
 
 # Colours
 RGB = tuple[int, int, int]
