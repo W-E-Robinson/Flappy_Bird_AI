@@ -18,3 +18,5 @@ format: requirements
 
 check: requirements
 	$(PYRIGHT) .
+
+style: format check
