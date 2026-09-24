@@ -17,8 +17,15 @@ from constants import (
     SCORE_DIGIT_NUM_ROWS,
     SCORE_DIGIT_NUM_COLS,
     SCORE_DIGIT_COL_GAP,
+    STARTING_OBSTACLE_GAP_SIZE,
+    FINAL_OBSTACLE_GAP_SIZE,
+    NUM_POINTS_PER_GAP_SHRINK,
+    MIN_DISTANCE_BOUNDARY_TO_GAP,
+    DISTANCE_BETWEEN_OBSTACLES,
+    OBSTACLE_COLOUR,
 )
 import random
+import math
 import time
 import os
 from typing import Literal
@@ -39,12 +46,15 @@ class Game:
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
+        self.gaps = []  # [col, gap_top_idx, gap_bottom_idx]
+        self.game_ticks_elapsed = 0
 
     def move_bird(self, direction: Literal["UP", "DOWN"]):
         self.screen[self.bird_row_coord][BIRD_COL_COORD] = BACKGROUND_COLOUR
         bird_velocity = self.bird_velocity_rows_per_tick(direction)
 
         self.bird_row_coord = (
+            # LIME: does round give an int anyway? <leader>K
             int(round(self.bird_row_coord - bird_velocity, 0))
             if direction == "UP"
             else int(round(self.bird_row_coord + bird_velocity, 0))
@@ -81,8 +91,33 @@ class Game:
     def on_tick(self):
         input = random.uniform(0, 1)
         self.move_bird("DOWN" if input >= 0.5 else "UP")
+        self.move_obstacles()
+        if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
+            self.generate_new_obstacle()
         # LIME: to test score changing for now, will be pillars past
         self.score += 1
+        self.game_ticks_elapsed += 1
+
+    def move_obstacles(self):
+        for idx in range(len(self.gaps)):
+            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
+            self.screen[top_gap_row_idx][col_idx] = BACKGROUND_COLOUR
+            self.screen[bottom_gap_row_idx][col_idx] = BACKGROUND_COLOUR
+            self.gaps[idx] = (col_idx - 1, top_gap_row_idx, bottom_gap_row_idx)
+
+        def my_func(x):
+            col_idx, top_gap_row_idx, bottom_gap_row_idx = x
+            if col_idx >= 0:
+                return True
+            else:
+                return False
+
+        self.gaps = list(filter(my_func, self.gaps))
+
+        for idx in range(len(self.gaps)):
+            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
+            self.screen[top_gap_row_idx][col_idx] = OBSTACLE_COLOUR
+            self.screen[bottom_gap_row_idx][col_idx] = OBSTACLE_COLOUR
 
     def detect_game_over(self):
         if self.bird_row_coord == 0:  # Hit top of screen
@@ -92,6 +127,21 @@ class Game:
         if self.score == MAX_SCORE:
             return True
         return False
+
+    def generate_new_obstacle(self):
+        gap_size = STARTING_OBSTACLE_GAP_SIZE
+        gap_size -= math.floor(self.score / NUM_POINTS_PER_GAP_SHRINK)
+        if gap_size < FINAL_OBSTACLE_GAP_SIZE:
+            gap_size = FINAL_OBSTACLE_GAP_SIZE
+
+        top_gap_row_idx = random.randint(
+            0 + MIN_DISTANCE_BOUNDARY_TO_GAP,
+            SCREEN_SIDE_LENGTH - 1 - MIN_DISTANCE_BOUNDARY_TO_GAP - gap_size,
+        )
+        obstacle_starting_col_idx = SCREEN_SIDE_LENGTH - 1
+        self.gaps.append(
+            (obstacle_starting_col_idx, top_gap_row_idx, top_gap_row_idx + gap_size)
+        )
 
     def game_loop(self):
         gameRunning = True
