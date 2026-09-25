@@ -126,6 +126,15 @@ class Game:
             return True
         if self.score == MAX_SCORE:
             return True
+        for idx in range(len(self.gaps)):
+            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
+            if col_idx == BIRD_COL_COORD:
+                if (
+                    self.bird_row_coord < top_gap_row_idx
+                    or self.bird_row_coord > bottom_gap_row_idx
+                ):
+                    return True
+
         return False
 
     def generate_new_obstacle(self):
