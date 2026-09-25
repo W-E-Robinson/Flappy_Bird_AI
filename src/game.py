@@ -29,6 +29,10 @@ import math
 import time
 import os
 from typing import Literal
+import sys
+import termios
+import tty
+import select
 
 
 class Game:
@@ -48,6 +52,7 @@ class Game:
         ]
         self.gaps = []  # [col, gap_top_idx, gap_bottom_idx]
         self.game_ticks_elapsed = 0
+        self.input_this_tick = False
 
     def move_bird(self, direction: Literal["UP", "DOWN"]):
         self.screen[self.bird_row_coord][BIRD_COL_COORD] = BACKGROUND_COLOUR
@@ -89,8 +94,7 @@ class Game:
             return final_velocity
 
     def on_tick(self):
-        input = random.uniform(0, 1)
-        self.move_bird("DOWN" if input >= 0.5 else "UP")
+        self.move_bird("UP" if self.input_this_tick is True else "DOWN")
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
@@ -159,17 +163,36 @@ class Game:
         )
 
     def game_loop(self):
-        gameRunning = True
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        # LIME: only posix this works for? = make note if so
 
-        while gameRunning:
-            os.system("clear")
+        try:
+            tty.setcbreak(fd)
 
-            self.on_tick()
-            if self.detect_game_over() is True:
-                gameRunning = False
-            self.print_play_screen()
+            gameRunning = True
 
-            time.sleep(MS_PER_GAME_TICK / 1000)
+            while gameRunning:
+                self.input_this_tick = False
+
+                readable, _, _ = select.select([sys.stdin], [], [], 0)
+
+                if readable:
+                    while select.select([sys.stdin], [], [], 0)[0]:
+                        key = sys.stdin.read(1)
+                        if key == " ":
+                            self.input_this_tick = True
+
+                os.system("clear")
+
+                self.on_tick()
+                if self.detect_game_over() is True:
+                    gameRunning = False
+                self.print_play_screen()
+
+                time.sleep(MS_PER_GAME_TICK / 1000)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
         os.system("clear")
         self.write_score_game_over_screen()
