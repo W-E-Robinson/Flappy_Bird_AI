@@ -94,8 +94,10 @@ class Game:
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
-        # LIME: to test score changing for now, will be pillars past
-        self.score += 1
+        for idx in range(len(self.gaps)):
+            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
+            if col_idx == BIRD_COL_COORD - 1:
+                self.score += 1
         self.game_ticks_elapsed += 1
 
     def move_obstacles(self):
