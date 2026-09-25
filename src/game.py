@@ -101,8 +101,10 @@ class Game:
     def move_obstacles(self):
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            self.screen[top_gap_row_idx][col_idx] = BACKGROUND_COLOUR
-            self.screen[bottom_gap_row_idx][col_idx] = BACKGROUND_COLOUR
+            for row_idx in range(top_gap_row_idx + 1):
+                self.screen[row_idx][col_idx] = BACKGROUND_COLOUR
+            for row_idx in range(bottom_gap_row_idx, SCREEN_SIDE_LENGTH):
+                self.screen[row_idx][col_idx] = BACKGROUND_COLOUR
             self.gaps[idx] = (col_idx - 1, top_gap_row_idx, bottom_gap_row_idx)
 
         def my_func(x):
@@ -116,8 +118,10 @@ class Game:
 
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            self.screen[top_gap_row_idx][col_idx] = OBSTACLE_COLOUR
-            self.screen[bottom_gap_row_idx][col_idx] = OBSTACLE_COLOUR
+            for row_idx in range(top_gap_row_idx + 1):
+                self.screen[row_idx][col_idx] = OBSTACLE_COLOUR
+            for row_idx in range(bottom_gap_row_idx, SCREEN_SIDE_LENGTH):
+                self.screen[row_idx][col_idx] = OBSTACLE_COLOUR
 
     def detect_game_over(self):
         if self.bird_row_coord == 0:  # Hit top of screen
