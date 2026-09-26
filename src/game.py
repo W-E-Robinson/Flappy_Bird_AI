@@ -26,12 +26,12 @@ from constants import (
     OBSTACLE_COLOUR,
     DIGIT_GLYPHS,
     BIRD_SIZE,
+    BIRD_FLAP_RISE_ROWS,
 )
 import random
 import math
 import time
 import os
-from typing import Literal
 import sys
 import termios
 import tty
@@ -51,8 +51,8 @@ class Game:
             for y in range(SCREEN_SIDE_LENGTH)
         ]
         self.num_ticks_rising_without_further_input = 0
-        self.num_ticks_in_free_fall = 0
-        self.current_free_fall_velocity = 0
+        self.last_direction = "DOWN"
+        self.current_velocity = 0
         self.score = 0
         self.gaps = (
             []
@@ -62,15 +62,14 @@ class Game:
 
         self.draw_current_bird_position(BIRD_COLOUR)
 
-    def move_bird_vertically(self, direction: Literal["UP", "DOWN"]):
-        bird_velocity = self.bird_velocity_rows_per_tick(direction)
-        bird_position_difference_rows = int(round(bird_velocity))
+    def move_bird_vertically(self):
+        bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded()
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
-            self.bird_top_row_coord - bird_position_difference_rows
+            self.bird_top_row_coord - bird_velocity
             if direction == "UP"
-            else self.bird_top_row_coord + bird_position_difference_rows
+            else self.bird_top_row_coord + bird_velocity
         )
         self.draw_current_bird_position(BIRD_COLOUR)
 
@@ -85,37 +84,42 @@ class Game:
                     BIRD_LEFT_COL_COORD + j
                 ] = colour
 
-    # LIME: make this?: bird_velocity_rows_per_tick (AKA rounded already?)
-    def bird_velocity_rows_per_tick(self, direction: Literal["UP", "DOWN"]):
-        # STARTING HERE ON NEW GRAVITY = UPWARDS AND CORRECT OTHER WAY
-        # feel might need a 3 by 3 bird to make this work...
-
-        if direction == "UP":
-            self.num_ticks_in_free_fall = 0
-            self.current_free_fall_velocity = 0
-            return 1
-        elif (
-            direction == "DOWN" and self.num_ticks_in_free_fall == 0
-        ):  # LIME: do I like this? is it needed?
-            self.num_ticks_in_free_fall = 1
-            self.current_free_fall_velocity = GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED
-            return 1
+    def bird_velocity_rows_per_tick_rounded(self):
+        if self.input_this_tick:
+            self.last_direction = "UP"
+            self.current_velocity = BIRD_FLAP_RISE_ROWS
+            return BIRD_FLAP_RISE_ROWS, "UP"
         else:
-            # https://en.wikipedia.org/wiki/Equations_for_a_falling_body
-            # LIME: umm using above correctly?
-            calced_velocity = (
-                self.current_free_fall_velocity
-                + GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED * self.num_ticks_in_free_fall
-            )
-            self.num_ticks_in_free_fall += 1
-            final_velocity = min(
-                calced_velocity, VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK
-            )
-            self.current_free_fall_velocity = final_velocity
-            return final_velocity
+            # Motion with constant acceleration (including hard cap falling), source:
+            # https://openstax.org/books/university-physics-volume-1/pages/3-4-motion-with-constant-acceleration
+            # With constant acceleration and per constant tick calculating,
+            # just becomes: new velocity = current veloicity +/- grav constant
+            if self.last_direction == "UP":
+                new_velocity = (
+                    self.current_velocity - GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED
+                )
+
+                # Can't see this ever guard coming into place given the grav
+                # constants I'm experimenting with are so low
+                if new_velocity <= 0:
+                    self.current_velocity = 0
+                    self.last_direction = "DOWN"
+                    return 0, "DOWN"
+
+                self.current_velocity = new_velocity
+                return int(round(new_velocity)), "UP"
+            else:
+                new_velocity = (
+                    self.current_velocity + GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED
+                )
+                actual_velocity = min(
+                    new_velocity, VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK
+                )
+                self.current_velocity = actual_velocity
+                return int(round(actual_velocity)), "DOWN"
 
     def on_tick(self):
-        self.move_bird_vertically("UP" if self.input_this_tick is True else "DOWN")
+        self.move_bird_vertically()
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
