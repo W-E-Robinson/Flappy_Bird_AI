@@ -209,7 +209,7 @@ class Game:
                 self.on_tick()
                 if self.detect_game_over() is True:
                     gameRunning = False
-                self.print_play_screen()
+                self.print_screen(self.screen)
 
                 time.sleep(MS_PER_GAME_TICK / 1000)
         finally:
@@ -217,25 +217,13 @@ class Game:
 
         os.system("clear")
         self.write_score_game_over_screen()
-        self.print_game_over_screen()
+        self.print_screen(self.game_over_screen)
 
-    def print_play_screen(self):
-        for row in self.screen:
+    def print_screen(self, screen):
+        for row in screen:
             for cell in row:
                 [red, green, blue] = cell
 
-                print(
-                    f"{ESCAPE}[{BCG};{RGB_MODE};{red};{green};{blue}m  {RESET}", end=""
-                )
-
-            print()
-
-    def print_game_over_screen(self):
-        for row in self.game_over_screen:
-            for cell in row:
-                [red, green, blue] = cell
-
-                # LIME: can combine with above right? = same function
                 print(
                     f"{ESCAPE}[{BCG};{RGB_MODE};{red};{green};{blue}m  {RESET}", end=""
                 )
