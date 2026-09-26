@@ -1,5 +1,6 @@
 from constants import (
     SCREEN_SIDE_LENGTH,
+    REDUCTION_PER_GAP_SHRINK,
     MAX_SCORE,
     BACKGROUND_COLOUR,
     RGB,
@@ -166,10 +167,12 @@ class Game:
     def detect_game_over(self):
         if self.bird_top_row_coord == 0:  # Hit top of screen
             return True
+
         if (
             self.bird_top_row_coord == SCREEN_SIDE_LENGTH - BIRD_SIZE
         ):  # Hit bottom of screen
             return True
+
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
             if col_idx == BIRD_LEFT_COL_COORD:
@@ -178,20 +181,23 @@ class Game:
                     or self.bird_top_row_coord > bottom_gap_row_idx
                 ):
                     return True
+
         if self.score == MAX_SCORE:
             return True
 
         return False
 
     def generate_new_obstacle(self):
-        gap_size = STARTING_OBSTACLE_GAP_SIZE
-        gap_size -= math.floor(self.score / NUM_POINTS_PER_GAP_SHRINK)
-        if gap_size < FINAL_OBSTACLE_GAP_SIZE:
-            gap_size = FINAL_OBSTACLE_GAP_SIZE
+        num_reductions = math.floor(self.score / NUM_POINTS_PER_GAP_SHRINK)
+        gap_size = (
+            STARTING_OBSTACLE_GAP_SIZE - num_reductions * REDUCTION_PER_GAP_SHRINK
+        )
+        gap_size = max(gap_size, FINAL_OBSTACLE_GAP_SIZE)
 
+        # Both bounds included on randint
         top_gap_row_idx = random.randint(
-            0 + MIN_DISTANCE_BOUNDARY_TO_GAP,
-            SCREEN_SIDE_LENGTH - 1 - MIN_DISTANCE_BOUNDARY_TO_GAP - gap_size,
+            MIN_DISTANCE_BOUNDARY_TO_GAP,
+            SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP - gap_size,
         )
         obstacle_starting_col_idx = SCREEN_SIDE_LENGTH - 1
         self.gaps.append(
