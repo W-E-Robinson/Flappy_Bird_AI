@@ -2,14 +2,15 @@ from constants import (
     SCREEN_SIDE_LENGTH,
     MAX_SCORE,
     BACKGROUND_COLOUR,
+    RGB,
     ESCAPE,
     BCG,
     RGB_MODE,
     RESET,
     BIRD_COLOUR,
     MS_PER_GAME_TICK,
-    BIRD_STARTING_ROW_COORD,
-    BIRD_COL_COORD,
+    BIRD_STARTING_TOP_ROW_COORD,
+    BIRD_COL_COORDS,
     GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED,
     VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK,
     SCORE_COLOUR,
@@ -23,6 +24,7 @@ from constants import (
     MIN_DISTANCE_BOUNDARY_TO_GAP,
     DISTANCE_BETWEEN_OBSTACLES,
     OBSTACLE_COLOUR,
+    DIGIT_GLYPHS,
 )
 import random
 import math
@@ -41,33 +43,46 @@ class Game:
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
-        self.bird_row_coord = BIRD_STARTING_ROW_COORD
-        self.screen[self.bird_row_coord][BIRD_COL_COORD] = BIRD_COLOUR
-        self.num_ticks_in_free_fall = 0
-        self.current_free_fall_velocity = 0
-        self.score = 0
+        # Bird is 2x2 square, tracked in row plane by top row
+        self.bird_top_row_coord = BIRD_STARTING_TOP_ROW_COORD
         self.game_over_screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
-        self.gaps = []  # [col, gap_top_idx, gap_bottom_idx]
+        self.num_ticks_in_free_fall = 0
+        self.current_free_fall_velocity = 0
+        self.score = 0
+        self.gaps = (
+            []
+        )  # [col, gap_top_idx, gap_bottom_idx] # LIME: I don't like this, dict?
         self.game_ticks_elapsed = 0
         self.input_this_tick = False
 
-    def move_bird(self, direction: Literal["UP", "DOWN"]):
-        self.screen[self.bird_row_coord][BIRD_COL_COORD] = BACKGROUND_COLOUR
+        self.draw_bird_position(BIRD_COLOUR)
+
+    def move_bird_vertically(self, direction: Literal["UP", "DOWN"]):
         bird_velocity = self.bird_velocity_rows_per_tick(direction)
+        bird_position_difference_rows = int(round(bird_velocity))
 
-        self.bird_row_coord = (
-            # LIME: does round give an int anyway? <leader>K
-            int(round(self.bird_row_coord - bird_velocity, 0))
+        self.draw_bird_position(BACKGROUND_COLOUR)
+        self.bird_top_row_coord = (
+            self.bird_top_row_coord - bird_position_difference_rows
             if direction == "UP"
-            else int(round(self.bird_row_coord + bird_velocity, 0))
+            else self.bird_top_row_coord + bird_position_difference_rows
         )
-        if self.bird_row_coord >= SCREEN_SIDE_LENGTH:
-            self.bird_row_coord = SCREEN_SIDE_LENGTH - 1
-        self.screen[self.bird_row_coord][BIRD_COL_COORD] = BIRD_COLOUR
+        self.draw_bird_position(BIRD_COLOUR)
 
+        if self.bird_top_row_coord >= SCREEN_SIDE_LENGTH:
+            self.bird_top_row_coord = SCREEN_SIDE_LENGTH - 1
+
+    # Used to clear up current bird position and draw new position
+    def draw_bird_position(self, colour: RGB):
+        self.screen[self.bird_top_row_coord][BIRD_COL_COORDS[0]] = colour
+        self.screen[self.bird_top_row_coord][BIRD_COL_COORDS[1]] = colour
+        self.screen[self.bird_top_row_coord + 1][BIRD_COL_COORDS[0]] = colour
+        self.screen[self.bird_top_row_coord + 1][BIRD_COL_COORDS[1]] = colour
+
+    # LIME: make this?: bird_velocity_rows_per_tick
     def bird_velocity_rows_per_tick(self, direction: Literal["UP", "DOWN"]):
         if direction == "UP":
             self.num_ticks_in_free_fall = 0
@@ -94,13 +109,13 @@ class Game:
             return final_velocity
 
     def on_tick(self):
-        self.move_bird("UP" if self.input_this_tick is True else "DOWN")
+        self.move_bird_vertically("UP" if self.input_this_tick is True else "DOWN")
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_COL_COORD - 1:
+            if col_idx == BIRD_COL_COORDS[0] - 1:
                 self.score += 1
         self.game_ticks_elapsed += 1
 
@@ -130,18 +145,18 @@ class Game:
                 self.screen[row_idx][col_idx] = OBSTACLE_COLOUR
 
     def detect_game_over(self):
-        if self.bird_row_coord == 0:  # Hit top of screen
+        if self.bird_top_row_coord == 0:  # Hit top of screen
             return True
-        if self.bird_row_coord == SCREEN_SIDE_LENGTH - 1:  # Hit bottom of screen
+        if self.bird_top_row_coord == SCREEN_SIDE_LENGTH - 1:  # Hit bottom of screen
             return True
         if self.score == MAX_SCORE:
             return True
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_COL_COORD:
+            if col_idx == BIRD_COL_COORDS:
                 if (
-                    self.bird_row_coord < top_gap_row_idx
-                    or self.bird_row_coord > bottom_gap_row_idx
+                    self.bird_top_row_coord < top_gap_row_idx
+                    or self.bird_top_row_coord > bottom_gap_row_idx
                 ):
                     return True
 
@@ -214,6 +229,7 @@ class Game:
             for cell in row:
                 [red, green, blue] = cell
 
+                # LIME: can combine with above right? = same function
                 print(
                     f"{ESCAPE}[{BCG};{RGB_MODE};{red};{green};{blue}m  {RESET}", end=""
                 )
@@ -221,9 +237,7 @@ class Game:
             print()
 
     def write_score_game_over_screen(self):
-        score = str(self.score if self.score <= MAX_SCORE else MAX_SCORE).zfill(
-            SCORE_NUM_DIGITS
-        )
+        score = str(min(self.score, MAX_SCORE)).zfill(SCORE_NUM_DIGITS)
 
         score_num_cols = (
             SCORE_NUM_DIGITS * SCORE_DIGIT_NUM_COLS
@@ -233,458 +247,13 @@ class Game:
         starting_starter_col = (SCREEN_SIDE_LENGTH - score_num_cols) // 2
 
         for idx, digit in enumerate(score):
-            starting_grid_point = [
-                starting_starter_row,
-                starting_starter_col
-                + idx * (SCORE_DIGIT_NUM_COLS + SCORE_DIGIT_COL_GAP),
-            ]
+            digit_col = starting_starter_col + idx * (
+                SCORE_DIGIT_NUM_COLS + SCORE_DIGIT_COL_GAP
+            )
 
-            # Each number has 7 rows + 5 cols
-            if digit == "0":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "1":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "2":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-            elif digit == "3":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "4":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "5":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "6":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "7":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-            elif digit == "8":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-            elif digit == "9":
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 0][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 1][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 0
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 2][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 3][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 4][
-                    starting_grid_point[1] + 4
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 5][
-                    starting_grid_point[1] + 3
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 1
-                ] = SCORE_COLOUR
-                self.game_over_screen[starting_grid_point[0] + 6][
-                    starting_grid_point[1] + 2
-                ] = SCORE_COLOUR
+            for row_offset, glyph_row in enumerate(DIGIT_GLYPHS[digit]):
+                for col_offset, cell in enumerate(glyph_row):
+                    if cell == "#":
+                        self.game_over_screen[starting_starter_row + row_offset][
+                            digit_col + col_offset
+                        ] = SCORE_COLOUR
