@@ -71,18 +71,27 @@ class Game:
             if direction == "UP"
             else self.bird_top_row_coord + bird_velocity
         )
+
+        # Stops 'list index out of range' error on game over detection whn overshoot
+        if self.bird_top_row_coord <= 0:
+            self.bird_top_row_coord = 0
+        if self.bird_top_row_coord >= SCREEN_SIDE_LENGTH - BIRD_SIZE:
+            self.bird_top_row_coord = SCREEN_SIDE_LENGTH - BIRD_SIZE
+
         self.draw_current_bird_position(BIRD_COLOUR)
 
-        if self.bird_top_row_coord >= SCREEN_SIDE_LENGTH:
-            self.bird_top_row_coord = SCREEN_SIDE_LENGTH - 1
-
-    # Used to clear up current bird position and draw new position
-    def draw_current_bird_position(self, colour: RGB):
+    def get_all_bird_coords(self):
+        coords = []
         for i in range(BIRD_SIZE):
             for j in range(BIRD_SIZE):
-                self.screen[self.bird_top_row_coord + i][
-                    BIRD_LEFT_COL_COORD + j
-                ] = colour
+                coords.append([self.bird_top_row_coord + i, BIRD_LEFT_COL_COORD + j])
+        return coords
+
+    # Used to clear up current bird position or draw new position
+    def draw_current_bird_position(self, colour: RGB):
+        for coord in self.get_all_bird_coords():
+            row, col = coord
+            self.screen[row][col] = colour
 
     def bird_velocity_rows_per_tick_rounded(self):
         if self.input_this_tick:
@@ -92,8 +101,8 @@ class Game:
         else:
             # Motion with constant acceleration (including hard cap falling), source:
             # https://openstax.org/books/university-physics-volume-1/pages/3-4-motion-with-constant-acceleration
-            # With constant acceleration and per constant tick calculating,
-            # just becomes: new velocity = current veloicity +/- grav constant
+            # With constant acceleration and per tick calculating, just becomes:
+            # new velocity = current veloicity +/- grav constant
             if self.last_direction == "UP":
                 new_velocity = (
                     self.current_velocity - GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED
@@ -157,9 +166,9 @@ class Game:
     def detect_game_over(self):
         if self.bird_top_row_coord == 0:  # Hit top of screen
             return True
-        if self.bird_top_row_coord == SCREEN_SIDE_LENGTH - 1:  # Hit bottom of screen
-            return True
-        if self.score == MAX_SCORE:
+        if (
+            self.bird_top_row_coord == SCREEN_SIDE_LENGTH - BIRD_SIZE
+        ):  # Hit bottom of screen
             return True
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
@@ -169,6 +178,8 @@ class Game:
                     or self.bird_top_row_coord > bottom_gap_row_idx
                 ):
                     return True
+        if self.score == MAX_SCORE:
+            return True
 
         return False
 
