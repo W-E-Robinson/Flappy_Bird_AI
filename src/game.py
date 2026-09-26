@@ -10,7 +10,7 @@ from constants import (
     BIRD_COLOUR,
     MS_PER_GAME_TICK,
     BIRD_STARTING_TOP_ROW_COORD,
-    BIRD_COL_COORDS,
+    BIRD_LEFT_COL_COORD,
     GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED,
     VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK,
     SCORE_COLOUR,
@@ -25,6 +25,7 @@ from constants import (
     DISTANCE_BETWEEN_OBSTACLES,
     OBSTACLE_COLOUR,
     DIGIT_GLYPHS,
+    BIRD_SIZE,
 )
 import random
 import math
@@ -43,12 +44,13 @@ class Game:
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
-        # Bird is 2x2 square, tracked in row plane by top row
+        # Bird is BIRD_SIZExBIRD_SIZE square, tracked in row plane by top row
         self.bird_top_row_coord = BIRD_STARTING_TOP_ROW_COORD
         self.game_over_screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
+        self.num_ticks_rising_without_further_input = 0
         self.num_ticks_in_free_fall = 0
         self.current_free_fall_velocity = 0
         self.score = 0
@@ -58,32 +60,36 @@ class Game:
         self.game_ticks_elapsed = 0
         self.input_this_tick = False
 
-        self.draw_bird_position(BIRD_COLOUR)
+        self.draw_current_bird_position(BIRD_COLOUR)
 
     def move_bird_vertically(self, direction: Literal["UP", "DOWN"]):
         bird_velocity = self.bird_velocity_rows_per_tick(direction)
         bird_position_difference_rows = int(round(bird_velocity))
 
-        self.draw_bird_position(BACKGROUND_COLOUR)
+        self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
             self.bird_top_row_coord - bird_position_difference_rows
             if direction == "UP"
             else self.bird_top_row_coord + bird_position_difference_rows
         )
-        self.draw_bird_position(BIRD_COLOUR)
+        self.draw_current_bird_position(BIRD_COLOUR)
 
         if self.bird_top_row_coord >= SCREEN_SIDE_LENGTH:
             self.bird_top_row_coord = SCREEN_SIDE_LENGTH - 1
 
     # Used to clear up current bird position and draw new position
-    def draw_bird_position(self, colour: RGB):
-        self.screen[self.bird_top_row_coord][BIRD_COL_COORDS[0]] = colour
-        self.screen[self.bird_top_row_coord][BIRD_COL_COORDS[1]] = colour
-        self.screen[self.bird_top_row_coord + 1][BIRD_COL_COORDS[0]] = colour
-        self.screen[self.bird_top_row_coord + 1][BIRD_COL_COORDS[1]] = colour
+    def draw_current_bird_position(self, colour: RGB):
+        for i in range(BIRD_SIZE):
+            for j in range(BIRD_SIZE):
+                self.screen[self.bird_top_row_coord + i][
+                    BIRD_LEFT_COL_COORD + j
+                ] = colour
 
-    # LIME: make this?: bird_velocity_rows_per_tick
+    # LIME: make this?: bird_velocity_rows_per_tick (AKA rounded already?)
     def bird_velocity_rows_per_tick(self, direction: Literal["UP", "DOWN"]):
+        # STARTING HERE ON NEW GRAVITY = UPWARDS AND CORRECT OTHER WAY
+        # feel might need a 3 by 3 bird to make this work...
+
         if direction == "UP":
             self.num_ticks_in_free_fall = 0
             self.current_free_fall_velocity = 0
@@ -115,7 +121,7 @@ class Game:
             self.generate_new_obstacle()
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_COL_COORDS[0] - 1:
+            if col_idx == BIRD_LEFT_COL_COORD - 1:
                 self.score += 1
         self.game_ticks_elapsed += 1
 
@@ -153,7 +159,7 @@ class Game:
             return True
         for idx in range(len(self.gaps)):
             col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_COL_COORDS:
+            if col_idx == BIRD_LEFT_COL_COORD:
                 if (
                     self.bird_top_row_coord < top_gap_row_idx
                     or self.bird_top_row_coord > bottom_gap_row_idx
