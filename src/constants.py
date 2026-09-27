@@ -26,9 +26,8 @@ SCORE_NUM_DIGITS = 4
 SCORE_DIGIT_NUM_ROWS = 7
 SCORE_DIGIT_NUM_COLS = 5
 SCORE_DIGIT_COL_GAP = 1
-
-# Each digit is drawn as a basic bitmap, # is a filled cell
 DIGIT_GLYPHS: dict[str, list[str]] = {
+    # Each digit is drawn as a basic bitmap, # is a filled cell
     "0": [" ### ", "#   #", "#  ##", "# # #", "##  #", "#   #", " ### "],
     "1": ["  #  ", " ##  ", "  #  ", "  #  ", "  #  ", "  #  ", " ### "],
     "2": [" ### ", "#   #", "    #", "   # ", "  #  ", " #   ", "#####"],

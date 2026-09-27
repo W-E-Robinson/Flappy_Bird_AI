@@ -47,11 +47,6 @@ class Game:
         ]
         # Bird is BIRD_SIZExBIRD_SIZE square, tracked in row plane by top row
         self.bird_top_row_coord = BIRD_STARTING_TOP_ROW_COORD
-        self.game_over_screen = [
-            [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
-            for y in range(SCREEN_SIDE_LENGTH)
-        ]
-        self.num_ticks_rising_without_further_input = 0
         self.last_direction = "DOWN"
         self.current_velocity = 0
         self.score = 0
@@ -237,8 +232,8 @@ class Game:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
         os.system("clear")
-        self.write_score_game_over_screen()
-        self.print_screen(self.game_over_screen)
+        game_over_screen = self.create_game_over_screen()
+        self.print_screen(game_over_screen)
 
     def print_screen(self, screen):
         for row in screen:
@@ -251,7 +246,12 @@ class Game:
 
             print()
 
-    def write_score_game_over_screen(self):
+    def create_game_over_screen(self):
+        game_over_screen = [
+            [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
+            for y in range(SCREEN_SIDE_LENGTH)
+        ]
+
         score = str(min(self.score, MAX_SCORE)).zfill(SCORE_NUM_DIGITS)
 
         score_num_cols = (
@@ -269,6 +269,8 @@ class Game:
             for row_offset, glyph_row in enumerate(DIGIT_GLYPHS[digit]):
                 for col_offset, cell in enumerate(glyph_row):
                     if cell == "#":
-                        self.game_over_screen[starting_starter_row + row_offset][
+                        game_over_screen[starting_starter_row + row_offset][
                             digit_col + col_offset
                         ] = SCORE_COLOUR
+
+        return game_over_screen
