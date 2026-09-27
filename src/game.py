@@ -50,13 +50,12 @@ class Game:
         self.last_direction = "DOWN"
         self.current_velocity = 0
         self.score = 0
-        self.gaps = (
-            []
-        )  # [col, gap_top_idx, gap_bottom_idx] # LIME: I don't like this, dict?
+        # {col_idx, gap_top_idx, gap_bottom_idx}[] gap_top_idx and gap_bottom_idx
+        # are the first and last open rows of the gap, inclusively.
+        self.gaps = []
         self.game_ticks_elapsed = 0
         self.input_this_tick = False
 
-    # LIME: this is nasty, also, my_func??!
     def move_bird_vertically(self):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded()
 
@@ -127,35 +126,31 @@ class Game:
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
-        for idx in range(len(self.gaps)):
-            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_LEFT_COL_COORD - 1:
+        for gap in self.gaps:
+            if gap["col_idx"] == BIRD_LEFT_COL_COORD - 1:
                 self.score += 1
+                break
         self.game_ticks_elapsed += 1
 
     def move_obstacles(self):
-        for idx in range(len(self.gaps)):
-            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            for row_idx in range(top_gap_row_idx + 1):
+        for idx, gap in enumerate(self.gaps):
+            col_idx = gap["col_idx"]
+            for row_idx in range(gap["gap_top_idx"]):
                 self.screen[row_idx][col_idx] = BACKGROUND_COLOUR
-            for row_idx in range(bottom_gap_row_idx, SCREEN_SIDE_LENGTH):
+            for row_idx in range(gap["gap_bottom_idx"] + 1, SCREEN_SIDE_LENGTH):
                 self.screen[row_idx][col_idx] = BACKGROUND_COLOUR
-            self.gaps[idx] = (col_idx - 1, top_gap_row_idx, bottom_gap_row_idx)
+            self.gaps[idx]["col_idx"] -= 1
 
-        def my_func(x):
-            col_idx, top_gap_row_idx, bottom_gap_row_idx = x
-            if col_idx >= 0:
-                return True
-            else:
-                return False
+        def is_col_still_on_page(gap):
+            return True if gap["col_idx"] >= 0 else False
 
-        self.gaps = list(filter(my_func, self.gaps))
+        self.gaps = list(filter(is_col_still_on_page, self.gaps))
 
-        for idx in range(len(self.gaps)):
-            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            for row_idx in range(top_gap_row_idx + 1):
+        for idx, gap in enumerate(self.gaps):
+            col_idx = gap["col_idx"]
+            for row_idx in range(gap["gap_top_idx"]):
                 self.screen[row_idx][col_idx] = OBSTACLE_COLOUR
-            for row_idx in range(bottom_gap_row_idx, SCREEN_SIDE_LENGTH):
+            for row_idx in range(gap["gap_bottom_idx"] + 1, SCREEN_SIDE_LENGTH):
                 self.screen[row_idx][col_idx] = OBSTACLE_COLOUR
 
     def detect_game_over(self):
@@ -167,12 +162,27 @@ class Game:
         ):  # Hit bottom of screen
             return True
 
-        for idx in range(len(self.gaps)):
-            col_idx, top_gap_row_idx, bottom_gap_row_idx = self.gaps[idx]
-            if col_idx == BIRD_LEFT_COL_COORD:
+        #  Obstacle collision
+        bird_col_coords = []
+        for i in range(BIRD_SIZE):
+            bird_col_coords.append(BIRD_LEFT_COL_COORD + i)
+
+        potential_obstacle = None
+        for idx, gap in enumerate(self.gaps):
+            col_idx = gap["col_idx"]
+            if col_idx in bird_col_coords:
+                potential_obstacle = gap
+                break
+
+        if potential_obstacle is not None:
+            bird_row_coords = []
+            for i in range(BIRD_SIZE):
+                bird_row_coords.append(self.bird_top_row_coord + i)
+
+            for row_coord in bird_row_coords:
                 if (
-                    self.bird_top_row_coord < top_gap_row_idx
-                    or self.bird_top_row_coord > bottom_gap_row_idx
+                    row_coord < potential_obstacle["gap_top_idx"]
+                    or row_coord > potential_obstacle["gap_bottom_idx"]
                 ):
                     return True
 
@@ -195,7 +205,11 @@ class Game:
         )
         obstacle_starting_col_idx = SCREEN_SIDE_LENGTH - 1
         self.gaps.append(
-            (obstacle_starting_col_idx, top_gap_row_idx, top_gap_row_idx + gap_size)
+            {
+                "col_idx": obstacle_starting_col_idx,
+                "gap_top_idx": top_gap_row_idx,
+                "gap_bottom_idx": top_gap_row_idx + gap_size - 1,
+            }
         )
 
     def game_loop(self):
