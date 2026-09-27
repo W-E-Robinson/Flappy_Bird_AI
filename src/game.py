@@ -61,8 +61,7 @@ class Game:
         self.game_ticks_elapsed = 0
         self.input_this_tick = False
 
-        self.draw_current_bird_position(BIRD_COLOUR)
-
+    # LIME: this is nasty, also, my_func??!
     def move_bird_vertically(self):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded()
 
@@ -205,15 +204,16 @@ class Game:
         )
 
     def game_loop(self):
+        # Current spacebar listening only works on POSIX
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
-        # LIME: only posix this works for? = make note if so
 
         try:
             tty.setcbreak(fd)
 
             gameRunning = True
 
+            self.draw_current_bird_position(BIRD_COLOUR)
             while gameRunning:
                 self.input_this_tick = False
 
