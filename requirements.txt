@@ -1,2 +1,5 @@
 black
 pyright
+torch
+gymnasium
+numpy
