@@ -1,6 +1,6 @@
 # Game Screen
 SCREEN_SIDE_LENGTH = 40
-BIRD_STARTING_TOP_ROW_COORD = 20
+BIRD_STARTING_TOP_ROW_COORD = 13
 BIRD_LEFT_COL_COORD = 9
 
 # Game Mechanics - to be tinkered with until game feels right
@@ -52,3 +52,10 @@ ESCAPE: str = "\033"
 BCG: str = "48"  # Background
 RGB_MODE: str = "2"
 RESET: str = f"{ESCAPE}[0m"
+
+# Network architecture
+HIDDEN_LAYER_SIZE = 32
+# Actions: input (bird moves up) or no input
+OUTPUT_SIZE = 2
+# Observables: bird top row, upcoming top gap row, upcoming botton gap row, upcoming gap col
+INPUT_FEATURES = 4

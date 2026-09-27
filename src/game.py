@@ -61,6 +61,7 @@ class Game:
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
+            # LIME: start this branch by refactoring, below is first!
             self.bird_top_row_coord - bird_velocity
             if direction == "UP"
             else self.bird_top_row_coord + bird_velocity
@@ -216,6 +217,7 @@ class Game:
         # Current spacebar listening only works on POSIX
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
+        # LIME: does env need to obey timeloop or env triggers the tick?
 
         try:
             tty.setcbreak(fd)
