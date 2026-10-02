@@ -1,4 +1,6 @@
 from constants import (
+    RUN_MODE,
+    TEST_OBSTACLE_DECIMALS,
     SCREEN_SIDE_LENGTH,
     REDUCTION_PER_GAP_SHRINK,
     MAX_SCORE,
@@ -54,6 +56,7 @@ class Game:
         # are the first and last open rows of the gap, inclusively.
         self.gaps = []
         self.game_ticks_elapsed = 0
+        self.obstacles_generated = 0
 
     def move_bird_vertically(self, input_this_tick: bool):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded(
@@ -194,26 +197,37 @@ class Game:
         return False
 
     def generate_new_obstacle(self):
-        # LIME: use RUN_MODE here
         num_reductions = math.floor(self.score / NUM_POINTS_PER_GAP_SHRINK)
         gap_size = (
             STARTING_OBSTACLE_GAP_SIZE - num_reductions * REDUCTION_PER_GAP_SHRINK
         )
         gap_size = max(gap_size, FINAL_OBSTACLE_GAP_SIZE)
-
-        # Both bounds included on randint
-        top_gap_row_idx = random.randint(
-            MIN_DISTANCE_BOUNDARY_TO_GAP,
-            SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP - gap_size,
+        top_gap_row_idx_options = list(
+            range(
+                MIN_DISTANCE_BOUNDARY_TO_GAP,
+                SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP - gap_size + 1,
+            )
         )
-        obstacle_starting_col_idx = SCREEN_SIDE_LENGTH - 1
+
+        top_gap_row_idx = (
+            random.choice(top_gap_row_idx_options)
+            if RUN_MODE == "RANDOM"
+            else top_gap_row_idx_options[
+                round(
+                    TEST_OBSTACLE_DECIMALS[self.obstacles_generated]
+                    * (len(top_gap_row_idx_options) - 1)
+                )
+            ]
+        )
+
         self.gaps.append(
             {
-                "col_idx": obstacle_starting_col_idx,
+                "col_idx": SCREEN_SIDE_LENGTH - 1,
                 "gap_top_idx": top_gap_row_idx,
                 "gap_bottom_idx": top_gap_row_idx + gap_size - 1,
             }
         )
+        self.obstacles_generated += 1
 
     # Environment will trigger game looping via direct game function calls
     def human_game_loop(self):
