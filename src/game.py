@@ -213,11 +213,11 @@ class Game:
             }
         )
 
-    def game_loop(self):
-        # Current spacebar listening only works on POSIX
+    # Environment will trigger game looping via direct game function calls
+    def human_game_loop(self):
+        # Current input listening only works on POSIX
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
-        # LIME: does env need to obey timeloop or env triggers the tick?
 
         try:
             tty.setcbreak(fd)
@@ -290,3 +290,20 @@ class Game:
                         ] = SCORE_COLOUR
 
         return game_over_screen
+
+    # Purely for benefit of Environment
+    def get_state(self):
+        # State is list of:
+        # 1) current row of top of bird
+        # 2) top gap row
+        # 3) bottom gap row
+        # 4) distance from right col of bird to col of next obstacle
+        for gap in self.gaps:
+            # Gaps appended so first will be required
+            if gap["col_idx"] > BIRD_LEFT_COL_COORD:
+                return [
+                    self.bird_top_row_coord,
+                    gap["gap_top_idx"],
+                    gap["gap_bottom_idx"],
+                    gap["col_idx"] - BIRD_LEFT_COL_COORD,
+                ]
