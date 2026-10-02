@@ -20,3 +20,12 @@ check: requirements
 	$(PYRIGHT) .
 
 style: format check
+	
+test-model:
+	$(PYTHON) ./src/test.py
+
+train-model:
+	$(PYTHON) ./src/train.py
+
+clear-models:
+	$(PYTHON) ./src/__models__/clear_models.py
