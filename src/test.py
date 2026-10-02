@@ -3,7 +3,7 @@ from os import listdir
 from agent import Agent
 from env import Env
 from tqdm import tqdm
-from constants import NUM_TET_EPISODES
+from constants import NUM_TEST_EPISODES
 
 
 def run_attempt(env, agent):
@@ -19,13 +19,13 @@ def run_attempt(env, agent):
             _reward,
             terminated,
             truncated,
-            _info,
+            info,
         ) = env.step(action)
 
         done = terminated or truncated
         obs = next_obs
 
-    return agent.get_score()
+    return info
 
 
 def main():
@@ -52,14 +52,17 @@ def main():
     # Loads relative to where script run from
     agent.load(model_path)
 
-    scores = []
-    for range_idx in tqdm(range(NUM_TET_EPISODES)):
-        scores.append(run_attempt(env, agent))
+    best_info = {"score": 0, "moves": []}
+    for range_idx in tqdm(range(NUM_TEST_EPISODES)):
+        info = run_attempt(env, agent)
+        if info["score"] > best_info["score"]:
+            best_info = info
 
-    num_attempts = NUM_TET_EPISODES
+    num_attempts = NUM_TEST_EPISODES
     print("Running finished")
     print(f"Total number of runs: {num_attempts}")
-    print(f"Scores: {scores}")
+    print(f"Best run score: {best_info["score"]}")
+    print(f"Best run moves: {best_info["moves"]}")
 
 
 if __name__ == "__main__":

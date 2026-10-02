@@ -13,6 +13,7 @@ from constants import (
 class Env(gym.Env):
     def __init__(self):
         self.game = Game()
+        self.moves = []
 
         self.observation_space = gym.spaces.Box(
             0.0,
@@ -31,12 +32,16 @@ class Env(gym.Env):
     def _get_obs(self):
         return self.game.get_state()
 
+    # Returns current score and cumulation of action per tick
     def _get_info(self):
-        return {"placeholder": "yet to decide what to do with this"}
-        # LIME: would like to be able to record and play back what happened
+        return {
+            "score": self.game.score,
+            "moves": self.moves,
+        }
 
     def step(self, action):
         move = self._action_to_input[action]
+        self.moves.append(move)
         self.game.on_tick(move)
 
         state = self.game.get_state()
@@ -68,6 +73,7 @@ class Env(gym.Env):
         super().reset(seed=seed)
 
         self.game = Game()
+        self.moves = []
 
         observation = self._get_obs()
         info = self._get_info()
