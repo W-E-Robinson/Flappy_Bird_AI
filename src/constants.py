@@ -1,4 +1,5 @@
 import os
+import random
 
 # Game Screen
 SCREEN_SIDE_LENGTH = 40
@@ -71,3 +72,5 @@ START_EPSILON = 1.0
 FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
 RUN_MODE = os.getenv("RUN_MODE", "RANDOM")  # RANDOM or TEST
+random.seed(666)
+TEST_OBSTACLE_DECIMALS = [random.uniform(0.0, 1.0) for _ in range(1005)]
