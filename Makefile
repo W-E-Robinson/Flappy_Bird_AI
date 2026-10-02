@@ -30,5 +30,8 @@ test-model:
 train-model:
 	RUN_MODE=RANDOM $(PYTHON) ./src/train.py
 
+replay-model:
+	REPLAY_MODEL=BOT $(PYTHON) ./src/replay.py
+
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py

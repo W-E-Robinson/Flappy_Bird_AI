@@ -5,6 +5,7 @@ from env import Env
 import gymnasium as gym
 from gymnasium.wrappers import TimeLimit
 from constants import (
+    MAX_EPISODE_STEPS,
     NUM_TRAINING_EPISODES,
     NUM_STEPS_TARGET_NETWORK_RESET,
     LEARNING_RATE,
@@ -21,7 +22,7 @@ def main():
     n_episodes = NUM_TRAINING_EPISODES
     env = gym.wrappers.RecordEpisodeStatistics(
         # Enough to clear max score possible
-        TimeLimit(Env(), MAX_SCORE * DISTANCE_BETWEEN_OBSTACLES + 100),
+        TimeLimit(Env(), max_episode_steps=MAX_EPISODE_STEPS),
         buffer_length=n_episodes,
     )
 
