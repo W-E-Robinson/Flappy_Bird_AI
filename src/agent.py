@@ -93,7 +93,3 @@ class Agent:
         self.target_network.load_state_dict(self.network.state_dict())
         self.target_network.eval()
         self.target_network.requires_grad_(False)
-
-    def get_score(self):  # LIME: can get this from info?
-        env = cast(Env, self.env.unwrapped)
-        return env.game.score
