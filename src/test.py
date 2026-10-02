@@ -55,7 +55,7 @@ def main():
     best_info = {"score": 0, "moves": []}
     for range_idx in tqdm(range(NUM_TEST_EPISODES)):
         info = run_attempt(env, agent)
-        if info["score"] > best_info["score"]:
+        if info["score"] >= best_info["score"]:
             best_info = info
 
     num_attempts = NUM_TEST_EPISODES
@@ -63,6 +63,12 @@ def main():
     print(f"Total number of runs: {num_attempts}")
     print(f"Best run score: {best_info["score"]}")
     print(f"Best run moves: {best_info["moves"]}")
+    with open("./src/latest_best_run.txt", "a") as f:
+        f.truncate(0)
+        f.write(str(best_info["score"]))
+        for move in best_info["moves"]:
+            f.write("\n")
+            f.write(str(move))
 
 
 if __name__ == "__main__":
