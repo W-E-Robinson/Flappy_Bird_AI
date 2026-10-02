@@ -220,6 +220,7 @@ class Game:
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
 
+        # LIME: is everything here completely mirrored in way AI does it? hmm...
         try:
             tty.setcbreak(fd)
 
@@ -292,7 +293,7 @@ class Game:
         return game_over_screen
 
     # Purely for benefit of Environment
-    def get_state(self):
+    def get_state(self) -> list[int]:
         # State is list of:
         # 1) current row of top of bird
         # 2) top gap row
@@ -307,3 +308,5 @@ class Game:
                     gap["gap_bottom_idx"],
                     gap["col_idx"] - BIRD_LEFT_COL_COORD,
                 ]
+
+        return [0, 0, 0, 0]  # Shouldn't be *touchwood* reachable

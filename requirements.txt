@@ -3,3 +3,4 @@ pyright
 torch
 gymnasium
 numpy
+tqdm

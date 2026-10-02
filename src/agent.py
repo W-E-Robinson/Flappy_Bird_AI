@@ -1,14 +1,16 @@
 import torch
+from typing import cast
+from env import Env
 from network import Network
 import numpy as np
 import gymnasium as gym
 
 
 class Agent:
-    """An agent that interacts with the cube environment, uses a Q-network to estimate action values and develop an action policy
+    """An agent that interacts with the game environment, uses a Q-network to estimate action values and develop an action policy
 
     Attributes:
-        env: Training environment to take actions, update cube state and return reward
+        env: Training environment to take actions, update game state and return reward
         network: Q-network to evaluate possible actions
         learning_rate (float): Controls Q-network adjustment based on new experience
         optimizer: Use Adam optimization alg to update network weights, using the learning_rate
@@ -67,7 +69,6 @@ class Agent:
 
         with torch.no_grad():
             next_q_values = self.target_network(next_state)
-            # LIME: look into overestimation bias
             best_future_q = torch.max(next_q_values)
 
             target = reward + self.discount_factor * best_future_q * (not terminated)
@@ -92,3 +93,7 @@ class Agent:
         self.target_network.load_state_dict(self.network.state_dict())
         self.target_network.eval()
         self.target_network.requires_grad_(False)
+
+    def get_score(self):  # LIME: can get this from info?
+        env = cast(Env, self.env.unwrapped)
+        return env.game.score
