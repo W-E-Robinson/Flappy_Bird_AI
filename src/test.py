@@ -7,7 +7,7 @@ from constants import NUM_TEST_EPISODES
 
 
 def run_attempt(env, agent):
-    obs, _info = env.reset()
+    obs, info = env.reset()
 
     done = False
 

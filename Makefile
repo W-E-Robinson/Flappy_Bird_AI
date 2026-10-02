@@ -5,7 +5,7 @@ BLACK := $(VENV)/bin/black
 PYRIGHT := $(VENV)/bin/pyright
 
 play:
-	$(PYTHON) ./src/play.py
+	RUN_MODE=RANDOM $(PYTHON) ./src/play.py
 
 venv:
 	python3 -m venv $(VENV)
@@ -22,10 +22,10 @@ check: requirements
 style: format check
 	
 test-model:
-	$(PYTHON) ./src/test.py
+	RUN_MODE=RANDOM $(PYTHON) ./src/test.py
 
 train-model:
-	$(PYTHON) ./src/train.py
+	RUN_MODE=TEST $(PYTHON) ./src/train.py
 
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py

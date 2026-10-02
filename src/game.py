@@ -194,6 +194,7 @@ class Game:
         return False
 
     def generate_new_obstacle(self):
+        # LIME: use RUN_MODE here
         num_reductions = math.floor(self.score / NUM_POINTS_PER_GAP_SHRINK)
         gap_size = (
             STARTING_OBSTACLE_GAP_SIZE - num_reductions * REDUCTION_PER_GAP_SHRINK

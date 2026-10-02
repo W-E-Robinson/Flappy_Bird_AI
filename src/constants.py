@@ -1,3 +1,5 @@
+import os
+
 # Game Screen
 SCREEN_SIDE_LENGTH = 40
 BIRD_STARTING_TOP_ROW_COORD = 13
@@ -60,7 +62,7 @@ OUTPUT_SIZE = 2
 # Observables: bird top row, upcoming top gap row, upcoming botton gap row, upcoming gap col
 INPUT_FEATURES = 4
 
-# Training + Running
+# Training + Testing
 NUM_TRAINING_EPISODES = 10_000
 NUM_TEST_EPISODES = 1_000
 NUM_STEPS_TARGET_NETWORK_RESET = 1_000
@@ -68,3 +70,4 @@ LEARNING_RATE = 0.001
 START_EPSILON = 1.0
 FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
+RUN_MODE = os.getenv("RUN_MODE", "RANDOM")  # RANDOM or TEST
