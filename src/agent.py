@@ -1,6 +1,4 @@
 import torch
-from typing import cast
-from env import Env
 from network import Network
 import numpy as np
 import gymnasium as gym

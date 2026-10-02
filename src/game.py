@@ -267,6 +267,20 @@ class Game:
         game_over_screen = self.create_game_over_screen()
         self.print_screen(game_over_screen)
 
+    def repeat_loop(self, score: int, moves: list[bool]):
+        gameRunning = True
+
+        self.draw_current_bird_position(BIRD_COLOUR)
+        while gameRunning:
+            os.system("clear")
+
+            self.on_tick(moves[self.game_ticks_elapsed])
+            if self.detect_game_over() is True:
+                gameRunning = False
+            self.print_screen(self.screen)
+
+            time.sleep(MS_PER_GAME_TICK / 1000)
+
     def print_screen(self, screen):
         for row in screen:
             for cell in row:

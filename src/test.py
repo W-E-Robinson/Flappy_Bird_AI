@@ -3,7 +3,7 @@ from os import listdir
 from agent import Agent
 from env import Env
 from tqdm import tqdm
-from constants import NUM_TEST_EPISODES
+from constants import NUM_TEST_EPISODES, MAX_EPISODE_STEPS
 
 
 def run_attempt(env, agent):
@@ -31,7 +31,7 @@ def run_attempt(env, agent):
 def main():
     print("Running trained model")
 
-    env = TimeLimit(Env(), max_episode_steps=10)
+    env = TimeLimit(Env(), max_episode_steps=MAX_EPISODE_STEPS)
 
     agent = Agent(
         env=env,
@@ -61,8 +61,8 @@ def main():
     num_attempts = NUM_TEST_EPISODES
     print("Running finished")
     print(f"Total number of runs: {num_attempts}")
-    print(f"Best run score: {best_info["score"]}")
-    print(f"Best run moves: {best_info["moves"]}")
+    print(f"Best run score: {best_info['score']}")
+    print(f"Best run moves: {best_info['moves']}")
     with open("./src/latest_best_run.txt", "a") as f:
         f.truncate(0)
         f.write(str(best_info["score"]))
