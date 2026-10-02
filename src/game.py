@@ -54,10 +54,11 @@ class Game:
         # are the first and last open rows of the gap, inclusively.
         self.gaps = []
         self.game_ticks_elapsed = 0
-        self.input_this_tick = False
 
-    def move_bird_vertically(self):
-        bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded()
+    def move_bird_vertically(self, input_this_tick: bool):
+        bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded(
+            input_this_tick
+        )
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
@@ -88,8 +89,8 @@ class Game:
             row, col = coord
             self.screen[row][col] = colour
 
-    def bird_velocity_rows_per_tick_rounded(self):
-        if self.input_this_tick:
+    def bird_velocity_rows_per_tick_rounded(self, input_this_tick: bool):
+        if input_this_tick:
             self.last_direction = "UP"
             self.current_velocity = BIRD_FLAP_RISE_ROWS
             return BIRD_FLAP_RISE_ROWS, "UP"
@@ -122,8 +123,8 @@ class Game:
                 self.current_velocity = actual_velocity
                 return int(round(actual_velocity)), "DOWN"
 
-    def on_tick(self):
-        self.move_bird_vertically()
+    def on_tick(self, input_this_tick: bool):
+        self.move_bird_vertically(input_this_tick)
         self.move_obstacles()
         if self.game_ticks_elapsed % DISTANCE_BETWEEN_OBSTACLES == 0:
             self.generate_new_obstacle()
@@ -226,19 +227,18 @@ class Game:
 
             self.draw_current_bird_position(BIRD_COLOUR)
             while gameRunning:
-                self.input_this_tick = False
-
                 readable, _, _ = select.select([sys.stdin], [], [], 0)
 
+                input_this_tick = False
                 if readable:
                     while select.select([sys.stdin], [], [], 0)[0]:
                         key = sys.stdin.read(1)
                         if key == " ":
-                            self.input_this_tick = True
+                            input_this_tick = True
 
                 os.system("clear")
 
-                self.on_tick()
+                self.on_tick(input_this_tick)
                 if self.detect_game_over() is True:
                     gameRunning = False
                 self.print_screen(self.screen)
