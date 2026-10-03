@@ -15,9 +15,11 @@ class Env(gym.Env):
         self.game = Game()
         self.moves = []
 
+        # Observables are screen coordinates and a column distance, so the
+        # screen bounds all of them
         self.observation_space = gym.spaces.Box(
             0.0,
-            float(STARTING_OBSTACLE_GAP_SIZE),
+            float(SCREEN_SIDE_LENGTH - 1),
             shape=(INPUT_FEATURES,),
             dtype=np.float32,
         )
@@ -29,8 +31,8 @@ class Env(gym.Env):
             1: False,
         }
 
-    def _get_obs(self):
-        return self.game.get_state()
+    def _get_obs(self) -> np.ndarray:
+        return np.array(self.game.get_state(), dtype=np.float32)
 
     # Returns current score and cumulation of action per tick
     def _get_info(self):
