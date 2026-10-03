@@ -31,7 +31,7 @@ train-model:
 	RUN_MODE=RANDOM $(PYTHON) ./src/train.py
 
 replay-model:
-	REPLAY_MODEL=BOT $(PYTHON) ./src/replay.py
+	REPLAY_MODEL=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py
