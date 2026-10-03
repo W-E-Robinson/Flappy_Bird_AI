@@ -40,7 +40,7 @@ class Agent:
         self.epsilon_decay = epsilon_decay
         self.final_epsilon = final_epsilon
 
-    def get_action(self, obs: list[int]) -> int:
+    def get_action(self, obs: np.ndarray) -> int:
         if np.random.random() < self.epsilon:
             return self.env.action_space.sample()
         else:
@@ -52,11 +52,11 @@ class Agent:
 
     def update(
         self,
-        obs: list[int],
+        obs: np.ndarray,
         action: int,
         reward: float,
         terminated: bool,
-        next_obs: list[int],
+        next_obs: np.ndarray,
     ):
         state = torch.tensor(obs, dtype=torch.float32)
         next_state = torch.tensor(next_obs, dtype=torch.float32)

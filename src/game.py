@@ -356,4 +356,10 @@ class Game:
                     gap["col_idx"] - BIRD_LEFT_COL_COORD,
                 ]
 
-        return [0, 0, 0, 0]  # Shouldn't be *touchwood* reachable
+        # First observation on a given game
+        return [
+            self.bird_top_row_coord,
+            0,
+            SCREEN_SIDE_LENGTH - 1,
+            SCREEN_SIDE_LENGTH - 1 - BIRD_LEFT_COL_COORD,
+        ]
