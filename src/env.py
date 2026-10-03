@@ -6,7 +6,7 @@ from constants import (
     MAX_SCORE,
     INPUT_FEATURES,
     OUTPUT_SIZE,
-    STARTING_OBSTACLE_GAP_SIZE,
+    SCREEN_SIDE_LENGTH,
 )
 
 

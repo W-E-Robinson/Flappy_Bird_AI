@@ -22,6 +22,9 @@ replay-model:
 replay-human:
 	REPLAY_MODE=HUMAN RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
+replay-both:
+	REPLAY_MODE=BOTH RUN_MODE=TEST $(PYTHON) ./src/replay.py
+
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py
 

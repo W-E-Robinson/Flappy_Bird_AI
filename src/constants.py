@@ -7,7 +7,8 @@ BIRD_STARTING_TOP_ROW_COORD = 13
 BIRD_LEFT_COL_COORD = 9
 
 # Game Mechanics - to be tinkered with until game feels right
-MS_PER_GAME_TICK = 100  # LIME: when low enough is Python speed limiting factor?
+MS_PER_GAME_TICK = 100
+MS_PER_REPLAY_TICK = 25
 GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED = 1.2
 VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK = 4.0
 BIRD_SIZE = 3  # BIRD_SIZExBIRD_SIZE pixels
@@ -29,6 +30,7 @@ SCORE_NUM_DIGITS = 4
 SCORE_DIGIT_NUM_ROWS = 7
 SCORE_DIGIT_NUM_COLS = 5
 SCORE_DIGIT_COL_GAP = 1
+SCORE_DIGIT_ROW_GAP = 2  # Between 2 scores on a replay comparison run
 DIGIT_GLYPHS: dict[str, list[str]] = {
     # Each digit is drawn as a basic bitmap, # is a filled cell
     "0": [" ### ", "#   #", "#  ##", "# # #", "##  #", "#   #", " ### "],
@@ -50,6 +52,7 @@ BIRD_COLOUR: RGB = (255, 0, 0)  # Red
 SCORE_COLOUR: RGB = (0, 0, 0)  # Black
 OBSTACLE_COLOUR: RGB = (0, 0, 0)  # Black
 BOT_BIRD_COLOUR: RGB = (0, 0, 255)  # Blue
+OVERLAP_BIRD_COLOUR: RGB = (255, 0, 255)  # Magenta
 
 # ANSI terminal codes
 ESCAPE: str = "\033"
