@@ -12,6 +12,7 @@ from constants import (
     RESET,
     BIRD_COLOUR,
     MS_PER_GAME_TICK,
+    MS_PER_REPLAY_TICK,
     BIRD_STARTING_TOP_ROW_COORD,
     BIRD_LEFT_COL_COORD,
     GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED,
@@ -21,6 +22,7 @@ from constants import (
     SCORE_DIGIT_NUM_ROWS,
     SCORE_DIGIT_NUM_COLS,
     SCORE_DIGIT_COL_GAP,
+    SCORE_DIGIT_ROW_GAP,
     STARTING_OBSTACLE_GAP_SIZE,
     FINAL_OBSTACLE_GAP_SIZE,
     NUM_POINTS_PER_GAP_SHRINK,
@@ -30,6 +32,7 @@ from constants import (
     DIGIT_GLYPHS,
     BIRD_SIZE,
     BIRD_FLAP_RISE_ROWS,
+    OVERLAP_BIRD_COLOUR,
 )
 import random
 import math
@@ -67,7 +70,6 @@ class Game:
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
-            # LIME: start this branch by refactoring, below is first!
             self.bird_top_row_coord - bird_velocity
             if direction == "UP"
             else self.bird_top_row_coord + bird_velocity
@@ -237,7 +239,6 @@ class Game:
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
 
-        # LIME: is everything here completely mirrored in way AI does it? hmm...
         try:
             tty.setcbreak(fd)
 
@@ -267,7 +268,7 @@ class Game:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
         os.system("clear")
-        game_over_screen = self.create_game_over_screen()
+        game_over_screen = self.create_game_over_screen([self])
         self.print_screen(game_over_screen)
 
         if RUN_MODE == "TEST":
@@ -284,22 +285,50 @@ class Game:
                         f.write("\n")
                         f.write(str(move))
 
-    def repeat_loop(self, score: int, moves: list[bool], colour: RGB):
-        self.bird_colour = colour
-        gameRunning = True
+    @classmethod
+    def race_loop(cls, runs: list[tuple["Game", list[bool]]]):
+        racing = list(runs)
+        for game, _ in racing:
+            game.draw_current_bird_position(game.bird_colour)
 
-        self.draw_current_bird_position(self.bird_colour)
-        while gameRunning:
-            os.system("clear")
+        while racing:
+            for game, moves in racing:
+                game.on_tick(moves[game.game_ticks_elapsed])
+            racing = [
+                (game, moves)
+                for game, moves in racing
+                if not game.detect_game_over() and game.game_ticks_elapsed < len(moves)
+            ]
 
-            self.on_tick(moves[self.game_ticks_elapsed])
-            if self.detect_game_over() is True:
-                gameRunning = False
-            self.print_screen(self.screen)
+            # Only the survivor is drawn, so a bird vanishes as it fails
+            if racing:
+                os.system("clear")
+                cls.print_screen(cls.compose_screens([game for game, _ in racing]))
 
-            time.sleep(MS_PER_GAME_TICK / 1000)
+            time.sleep(MS_PER_REPLAY_TICK / 1000)
 
-    def print_screen(self, screen):
+        os.system("clear")
+        cls.print_screen(cls.create_game_over_screen([game for game, _ in runs]))
+
+    @staticmethod
+    def compose_screens(games: list["Game"]) -> list[list[RGB]]:
+        stage = max(games, key=lambda game: game.game_ticks_elapsed)
+        screen = [row.copy() for row in stage.screen]
+
+        for game in games:
+            if game is stage:
+                continue
+            for row, col in game.get_all_bird_coords():
+                screen[row][col] = (
+                    OVERLAP_BIRD_COLOUR
+                    if screen[row][col] == stage.bird_colour
+                    else game.bird_colour
+                )
+
+        return screen
+
+    @staticmethod
+    def print_screen(screen):
         for row in screen:
             for cell in row:
                 [red, green, blue] = cell
@@ -310,32 +339,41 @@ class Game:
 
             print()
 
-    def create_game_over_screen(self):
+    @staticmethod
+    def create_game_over_screen(games: list["Game"]) -> list[list[RGB]]:
         game_over_screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
         ]
 
-        score = str(min(self.score, MAX_SCORE)).zfill(SCORE_NUM_DIGITS)
-
         score_num_cols = (
             SCORE_NUM_DIGITS * SCORE_DIGIT_NUM_COLS
             + (SCORE_NUM_DIGITS - 1) * SCORE_DIGIT_COL_GAP
         )
-        starting_starter_row = (SCREEN_SIDE_LENGTH - SCORE_DIGIT_NUM_ROWS) // 2
+        score_num_rows = (
+            len(games) * SCORE_DIGIT_NUM_ROWS + (len(games) - 1) * SCORE_DIGIT_ROW_GAP
+        )
+        starting_starter_row = (SCREEN_SIDE_LENGTH - score_num_rows) // 2
         starting_starter_col = (SCREEN_SIDE_LENGTH - score_num_cols) // 2
 
-        for idx, digit in enumerate(score):
-            digit_col = starting_starter_col + idx * (
-                SCORE_DIGIT_NUM_COLS + SCORE_DIGIT_COL_GAP
+        for game_idx, game in enumerate(games):
+            score = str(min(game.score, MAX_SCORE)).zfill(SCORE_NUM_DIGITS)
+            score_row = starting_starter_row + game_idx * (
+                SCORE_DIGIT_NUM_ROWS + SCORE_DIGIT_ROW_GAP
             )
+            colour = game.bird_colour if len(games) > 1 else SCORE_COLOUR
 
-            for row_offset, glyph_row in enumerate(DIGIT_GLYPHS[digit]):
-                for col_offset, cell in enumerate(glyph_row):
-                    if cell == "#":
-                        game_over_screen[starting_starter_row + row_offset][
-                            digit_col + col_offset
-                        ] = SCORE_COLOUR
+            for idx, digit in enumerate(score):
+                digit_col = starting_starter_col + idx * (
+                    SCORE_DIGIT_NUM_COLS + SCORE_DIGIT_COL_GAP
+                )
+
+                for row_offset, glyph_row in enumerate(DIGIT_GLYPHS[digit]):
+                    for col_offset, cell in enumerate(glyph_row):
+                        if cell == "#":
+                            game_over_screen[score_row + row_offset][
+                                digit_col + col_offset
+                            ] = colour
 
         return game_over_screen
 
