@@ -57,6 +57,8 @@ class Game:
         self.gaps = []
         self.game_ticks_elapsed = 0
         self.obstacles_generated = 0
+        self.moves_thus_far = []
+        self.bird_colour = BIRD_COLOUR
 
     def move_bird_vertically(self, input_this_tick: bool):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded(
@@ -77,7 +79,7 @@ class Game:
         if self.bird_top_row_coord >= SCREEN_SIDE_LENGTH - BIRD_SIZE:
             self.bird_top_row_coord = SCREEN_SIDE_LENGTH - BIRD_SIZE
 
-        self.draw_current_bird_position(BIRD_COLOUR)
+        self.draw_current_bird_position(self.bird_colour)
 
     def get_all_bird_coords(self):
         coords = []
@@ -241,7 +243,7 @@ class Game:
 
             gameRunning = True
 
-            self.draw_current_bird_position(BIRD_COLOUR)
+            self.draw_current_bird_position(self.bird_colour)
             while gameRunning:
                 readable, _, _ = select.select([sys.stdin], [], [], 0)
 
@@ -254,6 +256,7 @@ class Game:
 
                 os.system("clear")
 
+                self.moves_thus_far.append(input_this_tick)
                 self.on_tick(input_this_tick)
                 if self.detect_game_over() is True:
                     gameRunning = False
@@ -267,10 +270,25 @@ class Game:
         game_over_screen = self.create_game_over_screen()
         self.print_screen(game_over_screen)
 
-    def repeat_loop(self, score: int, moves: list[bool]):
+        if RUN_MODE == "TEST":
+            best_human_run_file = "./src/best_human_run.txt"
+            with open(best_human_run_file, "r") as f:
+                lines = f.read().splitlines()
+            best_score = lines.pop(0)
+
+            if self.score >= int(best_score):
+                with open(best_human_run_file, "a") as f:
+                    f.truncate(0)
+                    f.write(str(self.score))
+                    for move in self.moves_thus_far:
+                        f.write("\n")
+                        f.write(str(move))
+
+    def repeat_loop(self, score: int, moves: list[bool], colour: RGB):
+        self.bird_colour = colour
         gameRunning = True
 
-        self.draw_current_bird_position(BIRD_COLOUR)
+        self.draw_current_bird_position(self.bird_colour)
         while gameRunning:
             os.system("clear")
 

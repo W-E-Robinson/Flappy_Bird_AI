@@ -49,6 +49,7 @@ BACKGROUND_COLOUR: RGB = (255, 255, 255)  # White
 BIRD_COLOUR: RGB = (255, 0, 0)  # Red
 SCORE_COLOUR: RGB = (0, 0, 0)  # Black
 OBSTACLE_COLOUR: RGB = (0, 0, 0)  # Black
+BOT_BIRD_COLOUR: RGB = (0, 0, 255)  # Blue
 
 # ANSI terminal codes
 ESCAPE: str = "\033"
@@ -78,4 +79,4 @@ TEST_OBSTACLE_DECIMALS = [random.uniform(0.0, 1.0) for _ in range(1005)]
 MAX_EPISODE_STEPS = MAX_SCORE * DISTANCE_BETWEEN_OBSTACLES + 100
 
 # Replaying
-REPLAY_MODE = os.getenv("REPLAY", "BOT")  # options: BOT, HUMAN, BOTH
+REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")  # options: BOT, HUMAN, BOTH

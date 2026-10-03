@@ -10,6 +10,21 @@ play:
 play-test:
 	RUN_MODE=TEST $(PYTHON) ./src/play.py
 
+train-model:
+	RUN_MODE=RANDOM $(PYTHON) ./src/train.py
+
+test-model:
+	RUN_MODE=TEST $(PYTHON) ./src/test.py
+
+replay-model:
+	REPLAY_MODE=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
+
+replay-human:
+	REPLAY_MODE=HUMAN RUN_MODE=TEST $(PYTHON) ./src/replay.py
+
+clear-models:
+	$(PYTHON) ./src/__models__/clear_models.py
+
 venv:
 	python3 -m venv $(VENV)
 
@@ -23,15 +38,3 @@ check: requirements
 	$(PYRIGHT) .
 
 style: format check
-	
-test-model:
-	RUN_MODE=TEST $(PYTHON) ./src/test.py
-
-train-model:
-	RUN_MODE=RANDOM $(PYTHON) ./src/train.py
-
-replay-model:
-	REPLAY_MODEL=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
-
-clear-models:
-	$(PYTHON) ./src/__models__/clear_models.py
