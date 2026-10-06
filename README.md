@@ -37,7 +37,9 @@ The rules the agent and I both play by:
 - The score caps out at 9,999.
 - Game tick is every 100ms (this only applies to me as agent triggers the game tick itself)
 
-[`assets/example_gameplay.mp4`](assets/example_gameplay.mp4)
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/8aaeaeae-c7f2-4641-9ed3-8a3d90dfc723" controls width="300" muted alt="Backup: assets/example_gameplay.mp4"></video>
+</div>
 
 Because a fair race needs a fair course, `RUN_MODE` switches obstacle
 generation between `RANDOM` (fresh randomness, used for training) and `TEST` (a
@@ -150,7 +152,9 @@ seeded course is **50**, so it is playing the game but it is not beating me yet.
 Below is a recording of the bot (blue) playing alongside me (red). Any overlap
 shows magenta and the recording runs at 5x playing speed.
 
-[`assets/training_iteration_1.mp4`](assets/training_iteration_1.mp4)
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/befb8624-3d53-4007-9501-7c32173ef697" controls width="300" muted alt="Backup: assets/training_iteration_1.mp4"></video>
+</div>
 
 **Next Goal:** Get past my score of 50, which means surviving into the shrinking
 gap sizes rather than just cruising through the generous early ones.
@@ -166,7 +170,9 @@ Issues with the current approach I can see + things to consider going forward:
   goes to clear the gap too low trying to stay more centre and gravity pulls it down to clip the top of the pillar
   with the top of the bird, whereas I keep enough height to make sure the gap is cleared.
   
-[`assets/1st_bot_death.mp4`](assets/1st_bot_death.mp4)
+  <div align="center">
+    <video src="https://github.com/user-attachments/assets/f53a3b7a-5340-4dd9-80fd-eb9d79f058af" controls width="300" muted alt="Backup: assets/1st_bot_death.mp4"></video>
+  </div>
 
 - The agent only sees one obstacle ahead. At the point a gap is cleared the next
   one is already on screen, and a flap decision made 20 ticks out is what
