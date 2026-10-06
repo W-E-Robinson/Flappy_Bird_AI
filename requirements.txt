@@ -4,3 +4,4 @@ torch
 gymnasium
 numpy
 tqdm
+pytest

@@ -3,6 +3,7 @@ PYTHON := $(VENV)/bin/python
 PIP := $(VENV)/bin/pip
 BLACK := $(VENV)/bin/black
 PYRIGHT := $(VENV)/bin/pyright
+PYTEST := $(VENV)/bin/pytest
 
 play:
 	RUN_MODE=RANDOM $(PYTHON) ./src/play.py
@@ -33,6 +34,9 @@ venv:
 
 requirements: venv
 	$(PIP) install -r requirements.txt
+
+unit-test: requirements
+	$(PYTEST) .
 
 format: requirements
 	$(BLACK) .
