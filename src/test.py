@@ -1,9 +1,9 @@
-from gymnasium.wrappers import TimeLimit
+import gymnasium as gym
 from os import listdir
 from agent import Agent
-from env import Env
+from env import ENV_ID
 from tqdm import tqdm
-from constants import NUM_TEST_EPISODES, MAX_EPISODE_STEPS
+from constants import NUM_TEST_EPISODES
 
 
 def run_attempt(env, agent):
@@ -31,7 +31,7 @@ def run_attempt(env, agent):
 def main():
     print("Running trained model")
 
-    env = TimeLimit(Env(), max_episode_steps=MAX_EPISODE_STEPS)
+    env = gym.make(ENV_ID)
 
     agent = Agent(
         env=env,

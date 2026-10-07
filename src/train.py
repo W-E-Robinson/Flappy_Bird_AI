@@ -1,11 +1,9 @@
 from datetime import datetime
 from tqdm import tqdm
 from agent import Agent
-from env import Env
+from env import ENV_ID
 import gymnasium as gym
-from gymnasium.wrappers import TimeLimit
 from constants import (
-    MAX_EPISODE_STEPS,
     NUM_TRAINING_EPISODES,
     NUM_STEPS_TARGET_NETWORK_RESET,
     LEARNING_RATE,
@@ -21,8 +19,7 @@ def main():
     print("Initiating environment")
     n_episodes = NUM_TRAINING_EPISODES
     env = gym.wrappers.RecordEpisodeStatistics(
-        # Enough to clear max score possible
-        TimeLimit(Env(), max_episode_steps=MAX_EPISODE_STEPS),
+        gym.make(ENV_ID),
         buffer_length=n_episodes,
     )
 
