@@ -4,10 +4,13 @@ from typing import Optional
 import numpy as np
 from constants import (
     MAX_SCORE,
+    MAX_EPISODE_STEPS,
     INPUT_FEATURES,
     OUTPUT_SIZE,
     SCREEN_SIDE_LENGTH,
 )
+
+ENV_ID = "Flappy-v2"
 
 
 class Env(gym.Env):
@@ -81,3 +84,10 @@ class Env(gym.Env):
         info = self._get_info()
 
         return observation, info
+
+
+gym.register(
+    id=ENV_ID,
+    entry_point="env:Env",
+    max_episode_steps=MAX_EPISODE_STEPS,
+)
