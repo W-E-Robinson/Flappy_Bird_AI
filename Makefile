@@ -22,6 +22,9 @@ train-test-model: train-model test-model
 replay-model:
 	REPLAY_MODE=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
+replay-latest-model:
+	REPLAY_MODE=LATEST_BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
+
 replay-human:
 	REPLAY_MODE=HUMAN RUN_MODE=TEST $(PYTHON) ./src/replay.py
 

@@ -12,6 +12,7 @@ from constants import (
     OUTPUT_SIZE,
     SCREEN_SIDE_LENGTH,
     BIRD_LEFT_COL_COORD,
+    VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK,
 )
 
 ENV_ID = "Flappy-v2"
@@ -40,6 +41,10 @@ class Env(gym.Env):
             ],
             # distance from right col of bird to col of next obstacle
             [1, SCREEN_SIDE_LENGTH - BIRD_LEFT_COL_COORD],
+            # offset from centre of upcoming gap
+            [-(SCREEN_SIDE_LENGTH / 2), SCREEN_SIDE_LENGTH / 2],
+            # bird velocity
+            [0, VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK],
         ]
         self.observation_space = gym.spaces.Box(
             low=np.array(
@@ -48,6 +53,8 @@ class Env(gym.Env):
                     obs_space_ranges[1][0],
                     obs_space_ranges[2][0],
                     obs_space_ranges[3][0],
+                    obs_space_ranges[4][0],
+                    obs_space_ranges[5][0],
                 ],
                 dtype=np.float32,
             ),
@@ -57,6 +64,8 @@ class Env(gym.Env):
                     obs_space_ranges[1][1],
                     obs_space_ranges[2][1],
                     obs_space_ranges[3][1],
+                    obs_space_ranges[4][1],
+                    obs_space_ranges[5][1],
                 ],
                 dtype=np.float32,
             ),
@@ -86,11 +95,18 @@ class Env(gym.Env):
         self.game.on_tick(move)
 
         state = self.game.get_state()
-        reward = -1
-        # Weakly encouraging to stay centre
-        if state[0] == 20:
+
+        reward = 0
+        # Encouraging to stay at centre of upcoming gap
+        if state[0] == 0:
             reward += 5
-        # Strongly encouraging to go through gap
+        if state[0] == 1:
+            reward += 4
+        if state[0] == 2:
+            reward += 3
+        if state[0] == 3:
+            reward += 2
+
         if state[3] == 19:  # Just went past gap
             reward += 25
 

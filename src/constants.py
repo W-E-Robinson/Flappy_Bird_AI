@@ -64,8 +64,9 @@ RESET: str = f"{ESCAPE}[0m"
 HIDDEN_LAYER_SIZE = 32
 # Actions: input (bird moves up) or no input
 OUTPUT_SIZE = 2
-# Observables: bird top row, upcoming top gap row, upcoming botton gap row, upcoming gap col
-INPUT_FEATURES = 4
+# Observables: bird top row, upcoming top gap row, upcoming botton gap row,
+# distance to upcoming gap col, offset from gap centre, bird velocity
+INPUT_FEATURES = 6
 
 # Training + Testing
 NUM_TRAINING_EPISODES = 10_000
@@ -82,4 +83,4 @@ TEST_OBSTACLE_DECIMALS = [random.uniform(0.0, 1.0) for _ in range(1005)]
 MAX_EPISODE_STEPS = MAX_SCORE * DISTANCE_BETWEEN_OBSTACLES + 100
 
 # Replaying
-REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")  # options: BOT, HUMAN, BOTH
+REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")  # options: BOT, HUMAN, BOTH, LATEST_BOT
