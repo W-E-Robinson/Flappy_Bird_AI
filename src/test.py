@@ -70,6 +70,19 @@ def main():
             f.write("\n")
             f.write(str(move))
 
+    best_bot_run_file = "./src/best_bot_run.txt"
+    with open(best_bot_run_file, "r") as f:
+        lines = f.read().splitlines()
+    best_score = lines.pop(0)
+
+    if best_info["score"] >= int(best_score):
+        with open(best_bot_run_file, "a") as f:
+            f.truncate(0)
+            f.write(str(best_info["score"]))
+            for move in best_info["moves"]:
+                f.write("\n")
+                f.write(str(move))
+
 
 if __name__ == "__main__":
     main()

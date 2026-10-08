@@ -7,7 +7,7 @@ from constants import (
 )
 from game import Game
 
-BOT_RUN = ("src/latest_best_run.txt", BOT_BIRD_COLOUR)
+BOT_RUN = ("src/best_bot_run.txt", BOT_BIRD_COLOUR)
 HUMAN_RUN = ("src/best_human_run.txt", BIRD_COLOUR)
 RUNS_PER_REPLAY_MODE = {
     "BOT": [BOT_RUN],
