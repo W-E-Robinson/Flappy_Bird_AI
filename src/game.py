@@ -62,11 +62,13 @@ class Game:
         self.obstacles_generated = 0
         self.moves_thus_far = []
         self.bird_colour = BIRD_COLOUR
+        self.rounded_bird_velocity = 0  # Purely for observatin benefit
 
     def move_bird_vertically(self, input_this_tick: bool):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded(
             input_this_tick
         )
+        self.rounded_bird_velocity = bird_velocity
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
@@ -384,6 +386,9 @@ class Game:
         # 2) top gap row
         # 3) bottom gap row
         # 4) distance from right col of bird to col of next obstacle
+        # 5) offset from centre of upcoming gap (minus if above, positive below)
+        # measuring from middle of bird working with 3x3 at the moment
+        # 6) bird velocity (should help bird to gauge how far fall next tick if free falling)
         for gap in self.gaps:
             # Gaps appended so first will be required
             if gap["col_idx"] > BIRD_LEFT_COL_COORD:
@@ -392,6 +397,10 @@ class Game:
                     gap["gap_top_idx"],
                     gap["gap_bottom_idx"],
                     gap["col_idx"] - BIRD_LEFT_COL_COORD,
+                    self.bird_top_row_coord
+                    - 1
+                    - round((gap["gap_top_idx"] + gap["gap_bottom_idx"]) / 2),
+                    self.rounded_bird_velocity,
                 ]
 
         # First observation on a given game
@@ -400,4 +409,8 @@ class Game:
             MIN_DISTANCE_BOUNDARY_TO_GAP,
             SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP,
             SCREEN_SIDE_LENGTH - BIRD_LEFT_COL_COORD,
+            # Can't know as spawned after first observation, centre seems a
+            # good a place as any for a single first obs
+            0,
+            0,
         ]
