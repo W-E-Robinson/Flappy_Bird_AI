@@ -17,6 +17,8 @@ train-model:
 test-model:
 	RUN_MODE=TEST $(PYTHON) ./src/test.py
 
+train-test-model: train-model test-model
+
 replay-model:
 	REPLAY_MODE=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
