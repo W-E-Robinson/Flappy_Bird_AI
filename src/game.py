@@ -397,7 +397,7 @@ class Game:
         # First observation on a given game
         return [
             self.bird_top_row_coord,
-            0,
-            SCREEN_SIDE_LENGTH - 1,
-            SCREEN_SIDE_LENGTH - 1 - BIRD_LEFT_COL_COORD,
+            MIN_DISTANCE_BOUNDARY_TO_GAP,
+            SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP,
+            SCREEN_SIDE_LENGTH - BIRD_LEFT_COL_COORD,
         ]

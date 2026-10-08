@@ -3,11 +3,15 @@ from game import Game
 from typing import Optional
 import numpy as np
 from constants import (
+    MIN_DISTANCE_BOUNDARY_TO_GAP,
+    FINAL_OBSTACLE_GAP_SIZE,
+    BIRD_SIZE,
     MAX_SCORE,
     MAX_EPISODE_STEPS,
     INPUT_FEATURES,
     OUTPUT_SIZE,
     SCREEN_SIDE_LENGTH,
+    BIRD_LEFT_COL_COORD,
 )
 
 ENV_ID = "Flappy-v2"
@@ -18,12 +22,44 @@ class Env(gym.Env):
         self.game = Game()
         self.moves = []
 
-        # Observables are screen coordinates and a column distance, so the
-        # screen bounds all of them
+        obs_space_ranges = [
+            # current row of top of bird
+            [0, SCREEN_SIDE_LENGTH - BIRD_SIZE],
+            # top gap row
+            [
+                MIN_DISTANCE_BOUNDARY_TO_GAP,
+                SCREEN_SIDE_LENGTH
+                - MIN_DISTANCE_BOUNDARY_TO_GAP
+                - FINAL_OBSTACLE_GAP_SIZE
+                + 1,
+            ],
+            # bottom gap row
+            [
+                MIN_DISTANCE_BOUNDARY_TO_GAP + FINAL_OBSTACLE_GAP_SIZE,
+                SCREEN_SIDE_LENGTH - MIN_DISTANCE_BOUNDARY_TO_GAP,
+            ],
+            # distance from right col of bird to col of next obstacle
+            [1, SCREEN_SIDE_LENGTH - BIRD_LEFT_COL_COORD],
+        ]
         self.observation_space = gym.spaces.Box(
-            0.0,
-            float(SCREEN_SIDE_LENGTH - 1),
-            shape=(INPUT_FEATURES,),
+            low=np.array(
+                [
+                    obs_space_ranges[0][0],
+                    obs_space_ranges[1][0],
+                    obs_space_ranges[2][0],
+                    obs_space_ranges[3][0],
+                ],
+                dtype=np.float32,
+            ),
+            high=np.array(
+                [
+                    obs_space_ranges[0][1],
+                    obs_space_ranges[1][1],
+                    obs_space_ranges[2][1],
+                    obs_space_ranges[3][1],
+                ],
+                dtype=np.float32,
+            ),
             dtype=np.float32,
         )
 
