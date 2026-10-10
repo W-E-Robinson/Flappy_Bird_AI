@@ -129,11 +129,12 @@ class Env(gym.Env):
     ):
         super().reset(seed=seed)
 
+        info = self._get_info()
+
         self.game = Game()
         self.moves = []
 
         observation = self._get_obs()
-        info = self._get_info()
 
         return observation, info
 

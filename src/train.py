@@ -39,9 +39,10 @@ def main():
 
     num_steps = 0
 
+    training_scores = []
     print(f"Beginning training, number of episodes: {n_episodes}")
     for episode in tqdm(range(n_episodes)):
-        obs, _info = env.reset()
+        obs, info = env.reset()
         done = False
 
         while not done:
@@ -65,8 +66,16 @@ def main():
                 agent.resync_target_network()
 
         agent.decay_epsilon()
+        training_scores.append(info["score"])
 
     print("Training ended")
+
+    with open("./src/scores_last_test_session.txt", "a") as f:
+        print("Writing to scores_last_test_session.txt")
+        f.truncate(0)
+        for score in training_scores:
+            f.write(str(score))
+            f.write("\n")
 
     timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     # Saves relative to where script run from
