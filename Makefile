@@ -31,6 +31,9 @@ replay-human:
 replay-both:
 	REPLAY_MODE=BOTH RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
+graph:
+	$(PYTHON) ./src/graph.py
+
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py
 

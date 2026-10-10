@@ -81,9 +81,11 @@ src/
   test.py              # Evaluation entrypoint
   play.py              # Human play entrypoint
   replay.py            # Replay / race entrypoint
+  graph.py             # Graphs of recorded scores
   best_human_run.txt   # Best human run (score + move per tick)
   latest_best_run.txt  # Best bot run (score + move per tick)
   __models__/          # Saved model checkpoints (.pt)
+  __graphs__/          # Saved graphs (.png)
 ```
 
 ### Getting started
