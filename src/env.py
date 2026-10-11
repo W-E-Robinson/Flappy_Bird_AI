@@ -22,6 +22,7 @@ class Env(gym.Env):
     def __init__(self):
         self.game = Game()
         self.moves = []
+        self.prev_score = 0
 
         obs_space_ranges = [
             # current row of top of bird
@@ -99,27 +100,37 @@ class Env(gym.Env):
         reward = 0
 
         # Encourage alignment with the centre of the gap
-        if state[0] == 0:
+        if abs(state[4]) == 0:  # LIME: refactor into dict, I change to abs too
             reward += 5
-        elif state[0] == 1:
-            # what if clipping bottom because starts to see next one?
+        elif abs(state[4]) == 1:
+            # LIME: what if clipping bottom because starts to see next one?
             # make it hug the top end more?
             reward += 3
-        elif state[0] == 2:
+        elif abs(state[4]) == 2:
             reward += 1
         else:
             reward -= 2
+            # LIME: need test reward and get state from now on
 
         # Reward successfully passing the gap
-        if state[3] == 19:  # Just went past gap
+        scored = self.game.score > self.prev_score
+        self.prev_score = self.game.score
+        if scored:
             reward += 20
 
-        truncated = self.game.detect_game_over() and self.game.score != MAX_SCORE
+        # Death and reaching MAX_SCORE both end the MDP, so both are
+        # terminated. Truncation is reserved for the TimeLimit wrapper's step
+        # cap, which is a cutoff rather than a real end state - the agent must
+        # keep bootstrapping through those, but never through a death.
+        won = self.game.score == MAX_SCORE
+        game_over = self.game.detect_game_over() and not won
+
         # Penalise game over
-        if truncated:
+        if game_over:
             reward -= 100
 
-        terminated = self.game.score == MAX_SCORE
+        terminated = game_over or won
+        truncated = False
 
         observation = self._get_obs()
         info = self._get_info()
@@ -134,11 +145,13 @@ class Env(gym.Env):
     ):
         super().reset(seed=seed)
 
-        info = self._get_info()
-
         self.game = Game()
         self.moves = []
+        self.prev_score = 0
 
+        # Built after the new game, so info describes the episode being
+        # started rather than the one just finished.
+        info = self._get_info()
         observation = self._get_obs()
 
         return observation, info

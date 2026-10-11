@@ -53,7 +53,7 @@ def main():
                 reward,
                 terminated,
                 truncated,
-                _info,
+                info,
             ) = env.step(action)
 
             agent.update(obs, action, float(reward), terminated, next_obs)
