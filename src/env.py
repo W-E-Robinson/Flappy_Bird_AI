@@ -97,20 +97,25 @@ class Env(gym.Env):
         state = self.game.get_state()
 
         reward = 0
-        # Encouraging to stay at centre of upcoming gap
+
+        # Encourage alignment with the centre of the gap
         if state[0] == 0:
             reward += 5
-        if state[0] == 1:
-            reward += 4
-        if state[0] == 2:
+        elif state[0] == 1:
+            # what if clipping bottom because starts to see next one?
+            # make it hug the top end more?
             reward += 3
-        if state[0] == 3:
-            reward += 2
+        elif state[0] == 2:
+            reward += 1
+        else:
+            reward -= 2
 
+        # Reward successfully passing the gap
         if state[3] == 19:  # Just went past gap
-            reward += 25
+            reward += 20
 
         truncated = self.game.detect_game_over() and self.game.score != MAX_SCORE
+        # Penalise game over
         if truncated:
             reward -= 100
 
