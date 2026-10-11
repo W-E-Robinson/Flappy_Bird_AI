@@ -62,13 +62,19 @@ class Game:
         self.obstacles_generated = 0
         self.moves_thus_far = []
         self.bird_colour = BIRD_COLOUR
-        self.rounded_bird_velocity = 0  # Purely for observatin benefit
+        # Purely for observation benefit. And signed to match the row
+        # coordinate system: positive is falling, negative is rising.
+        self.rounded_bird_velocity = 0
 
     def move_bird_vertically(self, input_this_tick: bool):
         bird_velocity, direction = self.bird_velocity_rows_per_tick_rounded(
             input_this_tick
         )
-        self.rounded_bird_velocity = bird_velocity
+        # bird_velocity is an unsigned magnitude, so carry the direction into
+        # the observation, else rising and falling look identical.
+        self.rounded_bird_velocity = (
+            -bird_velocity if direction == "UP" else bird_velocity
+        )
 
         self.draw_current_bird_position(BACKGROUND_COLOUR)
         self.bird_top_row_coord = (
