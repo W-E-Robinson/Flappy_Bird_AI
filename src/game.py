@@ -260,6 +260,7 @@ class Game:
                 os.system("clear")
 
                 self.moves_thus_far.append(input_this_tick)
+                print(self.get_state())
                 self.on_tick(input_this_tick)
                 if self.detect_game_over() is True:
                     gameRunning = False
@@ -382,7 +383,7 @@ class Game:
     # Purely for benefit of Environment
     def get_state(self) -> list[int]:
         # State is list of:
-        # 1) current row of top of bird
+        # 1) current row of middle of bird (asumming 3x3 at the moment)
         # 2) top gap row
         # 3) bottom gap row
         # 4) distance from right col of bird to col of next obstacle
@@ -393,12 +394,12 @@ class Game:
             # Gaps appended so first will be required
             if gap["col_idx"] > BIRD_LEFT_COL_COORD:
                 return [
-                    self.bird_top_row_coord,
+                    self.bird_top_row_coord + 1,  # LIME: magic number? 3x3 curerently
                     gap["gap_top_idx"],
                     gap["gap_bottom_idx"],
-                    gap["col_idx"] - BIRD_LEFT_COL_COORD,
+                    gap["col_idx"] - BIRD_LEFT_COL_COORD - BIRD_SIZE,
                     self.bird_top_row_coord
-                    - 1
+                    + 1  # LIME: magic number? 3x3 curerently
                     - round((gap["gap_top_idx"] + gap["gap_bottom_idx"]) / 2),
                     self.rounded_bird_velocity,
                 ]
