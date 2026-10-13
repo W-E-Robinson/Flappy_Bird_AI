@@ -82,5 +82,10 @@ TEST_OBSTACLE_DECIMALS = [random.uniform(0.0, 1.0) for _ in range(1005)]
 # Enough to clear max score possible (100 is plenty of buffer)
 MAX_EPISODE_STEPS = MAX_SCORE * DISTANCE_BETWEEN_OBSTACLES + 100
 
-# Replaying
-REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")  # options: BOT, HUMAN, BOTH, LATEST_BOT
+# Replay buffer
+REPLAY_BUFFER_CAPACITY = 100_000
+REPLAY_BATCH_SIZE = 64
+MIN_REPLAY_BUFFER_SIZE = 1_000
+
+# Replaying - options: BOT, HUMAN, BOTH, LATEST_BOT
+REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")
