@@ -61,7 +61,7 @@ RGB_MODE: str = "2"
 RESET: str = f"{ESCAPE}[0m"
 
 # Network architecture
-HIDDEN_LAYER_SIZE = 32
+HIDDEN_LAYER_SIZE = 64
 # Actions: input (bird moves up) or no input
 OUTPUT_SIZE = 2
 # Observables: bird top row, upcoming top gap row, upcoming botton gap row,
