@@ -1,7 +1,13 @@
 import torch
 from network import Network
+from replay_buffer import ReplayBuffer
 import numpy as np
 import gymnasium as gym
+from constants import (
+    REPLAY_BUFFER_CAPACITY,
+    REPLAY_BATCH_SIZE,
+    MIN_REPLAY_BUFFER_SIZE,
+)
 
 
 class Agent:
@@ -9,6 +15,7 @@ class Agent:
 
     Attributes:
         env: Training environment to take actions, update game state and return reward
+        buffer: Replay buffer of past transitions, sampled in batches to train on
         network: Q-network to evaluate possible actions
         learning_rate (float): Controls Q-network adjustment based on new experience
         optimizer: Use Adam optimization alg to update network weights, using the learning_rate
@@ -28,6 +35,7 @@ class Agent:
         discount_factor: float,
     ):
         self.env = env
+        self.buffer = ReplayBuffer(REPLAY_BUFFER_CAPACITY)
         self.network = Network()
         self.target_network = Network()
         self.resync_target_network()
@@ -58,20 +66,31 @@ class Agent:
         terminated: bool,
         next_obs: np.ndarray,
     ):
-        state = torch.tensor(obs, dtype=torch.float32)
-        next_state = torch.tensor(next_obs, dtype=torch.float32)
+        self.buffer.push(obs, action, reward, next_obs, terminated)
 
-        q_values = self.network(state)
+        if len(self.buffer) < MIN_REPLAY_BUFFER_SIZE:
+            return
 
-        current_q = q_values[action]
+        (
+            obs_batch,
+            action_batch,
+            reward_batch,
+            next_obs_batch,
+            done_batch,
+        ) = self.buffer.sample(REPLAY_BATCH_SIZE)
+
+        q_values = self.network(obs_batch)
+        current_q = q_values.gather(1, action_batch.unsqueeze(1)).squeeze(1)
 
         with torch.no_grad():
-            next_q_values = self.target_network(next_state)
-            best_future_q = torch.max(next_q_values)
+            next_q_values = self.target_network(next_obs_batch)
+            best_future_q = next_q_values.max(dim=1).values
 
-            target = reward + self.discount_factor * best_future_q * (not terminated)
+            target = reward_batch + self.discount_factor * best_future_q * (
+                1.0 - done_batch
+            )
 
-        loss = (current_q - target) ** 2
+        loss = ((current_q - target) ** 2).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
