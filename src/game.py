@@ -45,7 +45,12 @@ import select
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, seed: int | None = None):
+        # A seeded course is reproducible, so a run can be stored as its seed
+        # plus its moves and rebuilt exactly for replay. No seed = the
+        # course comes from RUN_MODE as before.
+        self.seed = seed
+        self.rng = random.Random(seed)
         self.screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
@@ -221,16 +226,17 @@ class Game:
             )
         )
 
-        top_gap_row_idx = (
-            random.choice(top_gap_row_idx_options)
-            if RUN_MODE == "RANDOM"
-            else top_gap_row_idx_options[
+        if self.seed is not None:
+            top_gap_row_idx = self.rng.choice(top_gap_row_idx_options)
+        elif RUN_MODE == "RANDOM":
+            top_gap_row_idx = random.choice(top_gap_row_idx_options)
+        else:
+            top_gap_row_idx = top_gap_row_idx_options[
                 round(
                     TEST_OBSTACLE_DECIMALS[self.obstacles_generated]
                     * (len(top_gap_row_idx_options) - 1)
                 )
             ]
-        )
 
         self.gaps.append(
             {

@@ -7,6 +7,8 @@ run from), so graphs from separate sessions sit side by side.
 
 import os
 from datetime import datetime
+from statistics import median
+from constants import GRAPH_MODE
 import matplotlib
 
 matplotlib.use("Agg")  # Save to file, no GUI backend needed
@@ -15,6 +17,7 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 
 GRAPHS_DIR = "./src/__graphs__"
 SCORES_FILE = "./src/scores_last_test_session.txt"
+TEST_RUN_SCORES_FILE = "./src/scores_last_test_run.txt"
 
 # Chart palette - validated light mode steps, mark colour carries the series,
 # all text stays in ink colours
@@ -194,8 +197,88 @@ def graph_scores_last_test_session(
     return save_figure(fig, output_path)
 
 
+def graph_scores_last_test_run(
+    file_path: str = TEST_RUN_SCORES_FILE,
+    output_path: str | None = None,
+) -> str:
+    if output_path is None:
+        output_path = timestamped_path("scores_last_test_run")
+
+    scores = load_scores(file_path)
+    if not scores:
+        raise ValueError(f"No scores found in {file_path}")
+
+    lowest, highest = min(scores), max(scores)
+    bin_width = max(1, -(-(highest - lowest + 1) // 40))
+    edges = range(lowest, highest + bin_width + 1, bin_width)
+    counts = [0] * (len(list(edges)) - 1)
+    for score in scores:
+        counts[min((score - lowest) // bin_width, len(counts) - 1)] += 1
+    starts = [lowest + idx * bin_width for idx in range(len(counts))]
+
+    middle = median(scores)
+
+    plt.rcParams["font.family"] = FONT_FAMILY
+    fig, ax = plt.subplots(figsize=FIGURE_SIZE_INCHES)
+    fig.patch.set_facecolor(SURFACE)
+
+    ax.bar(
+        starts,
+        counts,
+        width=bin_width * 0.88,
+        align="edge",
+        color=SERIES_COLOUR,
+        linewidth=0,
+        zorder=3,
+    )
+    ax.axvline(middle, color=PRIMARY_INK, linewidth=1.5, linestyle="--", zorder=4)
+    ax.annotate(
+        f"median {middle:.0f}",
+        xy=(middle, max(counts)),
+        xytext=(6, -2),
+        textcoords="offset points",
+        color=PRIMARY_INK,
+        fontsize=9.5,
+        va="top",
+    )
+    ax.axvline(highest, color=MUTED_INK, linewidth=1, linestyle="--", zorder=4)
+    ax.annotate(
+        f"max {highest:,}",
+        xy=(highest, max(counts)),
+        xytext=(-6, -2),
+        textcoords="offset points",
+        color=SECONDARY_INK,
+        fontsize=9.5,
+        ha="right",
+        va="top",
+    )
+
+    style_axes(
+        ax,
+        title="Score distribution, last test run",
+        subtitle=(
+            f"{len(scores):,} seeded courses · median {middle:.0f} · "
+            f"mean {sum(scores) / len(scores):.2f} · best {highest:,}"
+        ),
+        x_label="Score (gaps cleared)",
+        y_label="Courses",
+    )
+    ax.set_xlim(lowest - bin_width, highest + bin_width * 2)
+    ax.set_ylim(0, max(counts) * 1.12)
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    return save_figure(fig, output_path)
+
+
+GRAPH_PER_MODE = {
+    "SESSION": graph_scores_last_test_session,
+    "TEST_RUN": graph_scores_last_test_run,
+}
+
+
 def main():
-    output_path = graph_scores_last_test_session()
+    output_path = GRAPH_PER_MODE[GRAPH_MODE]()
     print(f"Saved graph to: {output_path}")
 
 
