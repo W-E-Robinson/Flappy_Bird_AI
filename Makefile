@@ -22,6 +22,11 @@ train-test-model: train-model test-model
 replay-model:
 	REPLAY_MODE=BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
+# Best ever bot run, replayed on the seed it was actually scored on. The seed
+# stored with the run rebuilds that course, so RUN_MODE does not apply.
+replay-best-ever:
+	REPLAY_MODE=BOT $(PYTHON) ./src/replay.py
+
 replay-latest-model:
 	REPLAY_MODE=LATEST_BOT RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
@@ -31,8 +36,11 @@ replay-human:
 replay-both:
 	REPLAY_MODE=BOTH RUN_MODE=TEST $(PYTHON) ./src/replay.py
 
-graph:
-	$(PYTHON) ./src/graph.py
+graph-session:
+	GRAPH_MODE=SESSION $(PYTHON) ./src/graph.py
+
+graph-test-run:
+	GRAPH_MODE=TEST_RUN $(PYTHON) ./src/graph.py
 
 clear-models:
 	$(PYTHON) ./src/__models__/clear_models.py

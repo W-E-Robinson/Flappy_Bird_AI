@@ -139,7 +139,9 @@ class Env(gym.Env):
     ):
         super().reset(seed=seed)
 
-        self.game = Game()
+        # Seed reaches the course too, not just gym's own RNG, so a seeded
+        # reset replays the identical set of obstacles
+        self.game = Game(seed=seed)
         self.moves = []
         self.prev_score = 0
 

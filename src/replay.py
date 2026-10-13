@@ -34,7 +34,11 @@ def load_run(file: str, colour: RGB) -> Run:
         lines = f.read().splitlines()
     recorded_score = int(lines.pop(0))
 
-    game = Game()
+    seed = None
+    if lines and lines[0].strip().lower() not in ("true", "false"):
+        seed = int(lines.pop(0))
+
+    game = Game(seed=seed)
     game.bird_colour = colour
     return Run(file, game, [str_to_bool(line) for line in lines], recorded_score)
 

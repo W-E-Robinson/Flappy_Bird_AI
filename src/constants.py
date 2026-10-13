@@ -71,6 +71,9 @@ INPUT_FEATURES = 6
 # Training + Testing
 NUM_TRAINING_EPISODES = 10_000
 NUM_TEST_EPISODES = 1000
+# Test runs use seeds TEST_SEED_START..+NUM_TEST_EPISODES, so every model faces
+# the identical set of courses and the scores are comparable between runs
+TEST_SEED_START = 0
 NUM_STEPS_TARGET_NETWORK_RESET = 1000
 LEARNING_RATE = 0.001
 START_EPSILON = 1.0
@@ -93,3 +96,6 @@ MIN_REPLAY_BUFFER_SIZE = 1_000
 
 # Replaying - options: BOT, HUMAN, BOTH, LATEST_BOT
 REPLAY_MODE = os.getenv("REPLAY_MODE", "BOT")
+
+# Graphing
+GRAPH_MODE = os.getenv("GRAPH_MODE", "SESSION")  # options: SESSION, TEST_RUN
