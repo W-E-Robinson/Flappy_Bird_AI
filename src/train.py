@@ -9,6 +9,7 @@ from constants import (
     LEARNING_RATE,
     START_EPSILON,
     FINAL_EPSILON,
+    EPSILON_DECAY_FRACTION,
     DISCOUNT_FACTOR,
     MAX_SCORE,
     DISTANCE_BETWEEN_OBSTACLES,
@@ -26,8 +27,12 @@ def main():
     print("Initiating agent")
     learning_rate = LEARNING_RATE
     start_epsilon = START_EPSILON
-    epsilon_decay = start_epsilon / n_episodes
     final_epsilon = FINAL_EPSILON
+    # Paced over the distance epsilon actually travels, not the whole of
+    # start_epsilon, so it lands on the floor exactly as the decay phase ends
+    epsilon_decay = (start_epsilon - final_epsilon) / (
+        n_episodes * EPSILON_DECAY_FRACTION
+    )
     agent = Agent(
         env=env,
         learning_rate=learning_rate,

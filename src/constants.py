@@ -74,7 +74,11 @@ NUM_TEST_EPISODES = 1000
 NUM_STEPS_TARGET_NETWORK_RESET = 1000
 LEARNING_RATE = 0.001
 START_EPSILON = 1.0
-FINAL_EPSILON = 0.1
+FINAL_EPSILON = 0.01
+# Fraction of the run spent decaying epsilon, so the remainder trains at the
+# floor. Decoupled from the episode count: a longer run buys more exploitation
+# episodes rather than a proportionally longer exploration phase.
+EPSILON_DECAY_FRACTION = 0.9
 DISCOUNT_FACTOR = 0.95
 RUN_MODE = os.getenv("RUN_MODE", "RANDOM")  # RANDOM or TEST
 random.seed(666)
