@@ -397,3 +397,10 @@ Issues with the current approach I can see + things to consider going forward:
   obstacle spacing makes this a non issue, and I still think that is true at
   wide gaps, but at 5 rows the centres can be ~30 rows apart and the bird may
   need to commit before clearing the current gap.
+
+#### 3rd Entry - Overcoming the smallest gap
+**Goal:** Get the model to conquer the hardest gap size and get scores in the triple figures
+against the 1000 seed test courses from 2nd journal entry.
+
+
+##### 1. 
