@@ -23,7 +23,7 @@ MIN_DISTANCE_BOUNDARY_TO_GAP = 2
 DISTANCE_BETWEEN_OBSTACLES = 20
 
 # Max Score
-MAX_SCORE = 9_999
+MAX_SCORE = 999
 
 # Score Display - each digit is drawn as a 7 row x 5 col block
 SCORE_NUM_DIGITS = 4
