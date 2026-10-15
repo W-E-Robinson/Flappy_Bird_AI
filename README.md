@@ -6,7 +6,7 @@ built from scratch on top of [Gymnasium](https://gymnasium.farama.org/) and [PyT
 
 **Aim: an agent that beats my own best score on the same test course.**
 
-**Stretch Aim: an agent that maxes out the game at 9,999 score on a range of test courses.**
+**Stretch Aim: an agent that maxes out the game at 999 score on a range of test courses.**
 
 ### Contents
 - [Intro](#intro)
@@ -195,3 +195,205 @@ Issues with the current approach I can see + things to consider going forward:
   Worth tightening per dimension in v2, because the true bounds are also the divisors
   needed to normalise the inputs, and right now the four features reach the network on
   four different scales.
+
+#### 2nd Entry - Beating My Own Score (median of 53, best of 93)
+**Goal:** Get past my own best of 50, which means surviving into the narrowest
+gaps.
+
+This entry is a lot of small changes and then one big change. Roughly in the
+order I did them:
+
+##### 1. The observations were wrong before the agent ever saw them
+Two of the four numbers I was feeding in were incorrect. The "middle of
+the bird" was off by one row (as it was assuming a bird size of 1, not 3),
+and the distance to the upcoming gap was wsay off, measuring from the wrong column entirely.
+
+##### 2. Two more observations changes
+Went from 4 inputs to 6, adding:
+- Offset from the centre of the upcoming gap (negative above, positive below)
+- Bird velocity
+
+Before the agent had to work out whether it was above or below the offset, by comparing three separate row numbers itself,
+a lot to ask of one hidden layer. The velocity matters because the bird is
+accelerating under gravity, so the same row with a different speed needs a
+completely different decision.
+
+##### 3. The rewards were quietly rewarding the wrong thing
+This was the real problem, and there were three separate bugs:
+
+- The alignment reward was keyed on `state[0]`, the bird's **absolute row**,
+  not its offset from the gap. So it only paid out at rows 0, 1 and 2, which is
+  jammed against the ceiling, and a perfectly centred bird got punished. It was
+  training the bird to fly into the roof, **facepalm**.
+- The +20 for clearing a gap checked `state[3] == 19`, but the distance resets
+  to **17** when the next gap appears (due to bird size of 3). That line had never once executed. The
+  single most informative reward in the whole function was dead code.
+- Death was reported as `truncated` rather than `terminated`, so the Q update
+  bootstrapped *through* the wall: the target on a death was
+  `-100 + 0.95 * max Q(state_after_dying)`, which partly cancelled out the
+  punishment with a garbage value for a state that does not exist.
+
+##### 4. Normalising the inputs
+Raw observations spanned 0-38 for the row features but only 0-4 for velocity,
+so velocity was effectively invisible next to everything else. Everything now
+gets scaled to `[-1, 1]`.
+
+I also gave the velocity a **sign** while I was in there. It was an unsigned
+magnitude with the direction tracked separately and never passed on, so rising
+at 2 rows/tick and falling at 2 rows/tick looked identical to the network.
+
+##### 5. Rescaling the rewards
+Went from `+5 / +20 / -100` to roughly `+0.2 / +1 / -5`.
+
+The thing the network predicts is not a single tick's reward, it is the *total
+reward it expects from here on*. With a discount of 0.95 that works out at
+roughly the next 20 ticks added together, so under the old scale it was being
+asked to output numbers as big as about 130.
+
+A freshly initialised network outputs numbers around 0.5. So before it can
+learn anything useful it has to spend thousands of episodes just inflating its
+own output range by a factor of 250, which is pure wasted effort.
+
+Shrinking the rewards keeps the predictions in a range the network can produce
+from the start, and nothing about the decision changes.
+
+One trap here I nearly walked into: the rescale has to stay **proportional**.
+My first pass divided the alignment rewards by 20 and the death penalty by 100,
+which made dying (-1) *cheaper* than drifting misaligned for 20 ticks (-2). It
+would have learned to crash on purpose as an escape from accrued negative
+reward. The death penalty is -5 for exactly this reason.
+
+```python
+# Current rewards, per tick
+if abs(state[4]) == 0:
+    reward += 0.2    # Dead centre of the gap
+elif abs(state[4]) == 1:
+    reward += 0.15
+elif abs(state[4]) == 2:
+    reward += 0.05
+else:
+    reward -= 0.1    # Outside the band
+if scored:
+    reward += 1      # Cleared a gap
+if game_over:
+    reward -= 5      # Must outweigh a whole horizon of misalignment
+```
+
+##### 6. A replay buffer
+The thing I flagged as the top issue last entry. Every transition is now pushed
+into a 100k FIFO buffer and training samples a random batch of 64 from it,
+instead of learning once from the tick that just happened and throwing it away.
+
+- Consecutive game ticks are nearly identical, so learning from them in order
+  badly violates the assumption that samples are independent.
+- Deaths are the rarest and most informative transition, and they get rarer the
+  better the bird gets. At 300+ ticks an episode a death is well under 1% of the
+  data. The buffer keeps a standing reservoir of them to sample from.
+
+Measured over a test run, each stored transition ends up being learned from
+about **64 times** rather than once.
+
+##### 7. A bigger network
+32 hidden units in a single layer, up to 64 in two layers (290 parameters to
+4,738). Judging whether the bird clears a gap means composing position,
+velocity and ticks-remaining into a trajectory, which needs *products* of the
+inputs. One ReLU layer approximates those badly.
+
+
+##### 8. The epsilon schedule (the big one)
+The previous changes to so far in this journal pushed the average score by the the last rolling
+200 episodes to be 18.20 agasint random training, then came the big noticed change below
+
+The first problem was the floor of 0.1, which sounds harmless and really is not.
+
+Epsilon 0.1 means 10% of ticks take a random action. But there are only two
+actions to pick from, so half the time that random pick lands on the one it was
+going to choose anyway. The chance of actually being *dragged off course* on
+any single tick is therefore `0.1 / 2 = 5%`.
+
+A gap takes about 20 ticks to fly through, and clearing it means getting near all 20
+of those ticks right. So I need to not be knocked off course 20 times in a row,
+which is 95% multiplied by itself 20 times:
+
+```
+P(knocked off course at least once) = 1 - 0.95^20 = 0.64
+```
+
+**So a 64% chance of being thrown off in any given gap.** The agent was never
+getting a fair run at a single obstacle. Dropping the floor to 0.01 gives
+`1 - 0.995^20 = 0.095`, so about 10% instead.
+
+This is also why my training graphs always looked worse than the model really
+was. Those scores are recorded *with* exploration still switched on, whereas
+the test run plays at epsilon 0.
+
+The second problem was that the decay was derived from the episode count, so it
+reached the floor at 90% of the run no matter how long the run was. Bumping
+training from 10k to 25k episodes did nothing except stretch the exploration
+phase proportionally.
+
+The other huge advantage to keep final exploration small at the end is that the model
+gets way more time training around the 50+ region. At 50 is when the gap has shrunk to
+the minimum (5) and is the most difficult stage. At epsilon ending in 0.1 it would just immediately die
+most of the time and not learn how to handle these.
+
+<div align="center">
+  <img src="PLACEHOLDER_TRAINING_CURVE" width="700" alt="Backup: assets/2nd_entry_training_curve.png">
+</div>
+
+##### 9. Testing properly: 1000 seeded courses
+The old test loop ran 1000 episodes with `RUN_MODE=TEST`, which uses a fixed
+list of obstacle positions. Since the model is deterministic at epsilon 0, that
+was **1000 identical replays of the same game**. It reported exactly the same
+score every time and I was reading it as a distribution, not very good.
+
+Courses are now seedable. The test run plays seeds 0-999, so every model faces
+the identical set of 1000 *different* courses and the numbers are comparable
+between runs. It reports the median as the most important statistic.
+
+The seed also gets stored alongside the moves in the best run files, which
+means a recorded run can be rebuilt exactly for replay. Before this, saved
+moves only reproduced against whatever course happened to be generated next.
+
+<div align="center">
+  <img src="PLACEHOLDER_SCORE_HISTOGRAM" width="700" alt="Backup: assets/2nd_entry_score_histogram.png">
+</div>
+
+**Results:** Over 1000 seeded courses the model now scores a **median of 53**,
+a mean of 54.13, a best of **93** and, notably, **zero failures**, with the
+worst course of the thousand still reaching 41. Last entry's best single run
+was 17. My own best is 50, so it is now comfortably past me.
+
+| Milestone | Gap size | Courses reaching it |
+|---|---|---|
+| Score 10 | 13 | 100% |
+| Score 20 | 11 | 100% |
+| Score 30 | 9 | 100% |
+| Score 40 | 7 | 100% |
+| Score 50 | 5 | 91.1% |
+
+So everything down to a 7 row gap is now essentially solved, and 91% of runs
+make it to the 5 row gaps.
+
+**Next Goal:** Consistently well past 50 and beyond. The best run of 93 is proof the policy can already string
+43 of the narrowest gap together back to back, so consistency is the gap rather than
+capability.
+
+Issues with the current approach I can see + things to consider going forward:
+- Looking at how the bird dies at the narrow gaps, **71% of deaths happen on a tick where the bird is rising**,
+  i.e. it killed itself by flapping, and a third of those are from a position
+  that was already within 1 row of the centre. A flap moves it 2 rows instantly
+  and the survivable window at a 5 row gap is 1 row either side, so flapping on
+  final approach is fatal even from a perfect position. The reward pays for
+  alignment *right now*, but what matters is alignment *on arrival*. Shaping on
+  projected arrival position instead is the obvious next experiment.
+- A discount of 0.95 is a 20 tick lookahead, incidentally is almost exactly one gap.
+  Threading through 5 row gaps is a timing problem that needs planning across the
+  gap boundary, so 0.98 (about 50 ticks) is worth trying, at the cost of slower
+  and noisier learning.
+- Even at 0.01, is better bit epsilon is still pretty fatal at the narrowest gaps, so a chunk of
+  late training experience is the agent learning from deaths it is pushed towards. Making even lower on the final stretch may help.
+- The agent still only sees one obstacle ahead. I argued last entry that the
+  obstacle spacing makes this a non issue, and I still think that is true at
+  wide gaps, but at 5 rows the centres can be ~30 rows apart and the bird may
+  need to commit before clearing the current gap.
