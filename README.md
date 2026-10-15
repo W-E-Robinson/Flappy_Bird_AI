@@ -338,7 +338,7 @@ the minimum (5) and is the most difficult stage. At epsilon ending in 0.1 it wou
 most of the time and not learn how to handle these.
 
 <div align="center">
-  <img src="PLACEHOLDER_TRAINING_CURVE" width="700" alt="Backup: assets/2nd_entry_training_curve.png">
+  <img src="https://github.com/user-attachments/assets/6c9b241f-94e7-4040-8e35-e1bf753de970" width="700" alt="Backup: assets/2nd_entry_training_curve.png">
 </div>
 
 ##### 9. Testing properly: 1000 seeded courses
@@ -356,7 +356,7 @@ means a recorded run can be rebuilt exactly for replay. Before this, saved
 moves only reproduced against whatever course happened to be generated next.
 
 <div align="center">
-  <img src="PLACEHOLDER_SCORE_HISTOGRAM" width="700" alt="Backup: assets/2nd_entry_score_histogram.png">
+  <img src="https://github.com/user-attachments/assets/bfd98883-bfd8-451c-abe3-1276218409a1" width="700" alt="Backup: assets/2nd_entry_score_histogram.png">
 </div>
 
 **Results:** Over 1000 seeded courses the model now scores a **median of 53**,
