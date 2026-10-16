@@ -101,18 +101,34 @@ class Env(gym.Env):
 
         reward = 0
 
-        # Encourage alignment with the centre of the gap
-        if abs(state[4]) == 0:  # LIME: refactor into dict, I change to abs too
-            reward += 0.2
-        elif abs(state[4]) == 1:
-            # LIME: what if clipping bottom because starts to see next one?
-            # make it hug the top end more?
-            reward += 0.15
-        elif abs(state[4]) == 2:
-            reward += 0.05
+        # If you hit spacebar, it takes 5 ticks to return to the row you spacebared from
+
+        if state[3] > 6:
+            # Encourage alignment with the centre of the gap on arrival
+            if abs(state[4]) == 0:  # LIME: refactor into dict, I change to abs too
+                reward += 0.2
+            elif abs(state[4]) == 1:
+                # LIME: what if clipping bottom because starts to see next one?
+                # make it hug the top end more?
+                reward += 0.15
+            elif abs(state[4]) == 2:
+                reward += 0.05
+            else:
+                reward -= 0.1
         else:
-            reward -= 0.1
-            # LIME: need test reward and get state from now on
+            # Encourage correct approach to the gap (README - 3rd Journal Entry, section 4)
+            if state[3] == 6:
+                if state[0] == state[2] + 1 or state[0] == state[2] + 2:
+                    reward += 0.2
+                else:
+                    reward -= 0.2
+            if state[3] == 1:
+                if state[0] == state[2] + 1 or state[0] == state[2] + 2:
+                    reward += 0.2
+                else:
+                    reward -= 0.2
+
+        # LIME: also need to account when inside the cap, offset is in the minuses?
 
         # Reward successfully passing the gap
         scored = self.game.score > self.prev_score

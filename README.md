@@ -427,3 +427,12 @@ To get the agent even more time in the 50+ region, but this did increase trainin
 This bumped my median to 63 and my single best to 207. I still believe the real blocker here
 is the reward strategy approaching the narrowest gaps. Still, helpful to know that getting as much
 time in the final region does produce some meaningful difference.
+
+##### 4. Conquering the 5 gap
+When I arbitrarily made the smallest gap possible on the course 5 I unknowingly made it very difficult for a 3x3 bird to get through.
+
+The bird takes 3 ticks between starting the obstacle to clearing it.
+Hitting the spacebar rises the bird by 2, making it very easy whilst inside the gap to do this and hit the top of it.
+The tick before the obstacle s reached, if the bottom of the bird is 1 to 2 rows below the bottom of the gap and then spacebar is hit,
+this will be enough to carry it through the gap with no further input needed. The bird needs some foresight before this so that it can position itself in this correct
+spot 1 tick before the obstacle is reached, once it's too late it's too late. The bird takes 5 ticks to return to the same row from which the spacebar is hit with no flaps since. I will tinker with rewarding to encourage the bird to do this.
