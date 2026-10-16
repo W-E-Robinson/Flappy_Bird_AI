@@ -402,19 +402,35 @@ class Game:
         # 5) offset from centre of upcoming gap (minus if above, positive below)
         # measuring from middle of bird working with 3x3 at the moment
         # 6) bird velocity (should help bird to gauge how far fall next tick if free falling)
-        for gap in self.gaps:
-            # Gaps appended so first will be required
-            if gap["col_idx"] > BIRD_LEFT_COL_COORD:
-                return [
-                    self.bird_top_row_coord + 1,  # LIME: magic number? 3x3 curerently
-                    gap["gap_top_idx"],
-                    gap["gap_bottom_idx"],
-                    gap["col_idx"] - BIRD_LEFT_COL_COORD - BIRD_SIZE,
-                    self.bird_top_row_coord
-                    + 1  # LIME: magic number? 3x3 curerently
-                    - round((gap["gap_top_idx"] + gap["gap_bottom_idx"]) / 2),
-                    self.rounded_bird_velocity,
-                ]
+        # 7) offset from centre of the gap AFTER the upcoming one, 0 when there
+        # isn't one on screen yet
+        # 8) whether that gap after next is actually on screen, 1 or 0. Gaps
+        # spawn every DISTANCE_BETWEEN_OBSTACLES ticks but stay ahead of the
+        # bird for longer than that, so roughly half the time there is no gap
+        # after next and 0 in 7) would otherwise read as "perfectly aligned"
+        bird_middle_row = self.bird_top_row_coord + 1  # LIME: magic number? 3x3
+
+        def offset_from_gap_centre(gap):
+            return bird_middle_row - round(
+                (gap["gap_top_idx"] + gap["gap_bottom_idx"]) / 2
+            )
+
+        # Gaps appended in order, so the upcoming ones stay in order too
+        upcoming = [gap for gap in self.gaps if gap["col_idx"] > BIRD_LEFT_COL_COORD]
+
+        if upcoming:
+            gap = upcoming[0]
+            gap_after_next_known = len(upcoming) > 1
+            return [
+                bird_middle_row,
+                gap["gap_top_idx"],
+                gap["gap_bottom_idx"],
+                gap["col_idx"] - BIRD_LEFT_COL_COORD - BIRD_SIZE,
+                offset_from_gap_centre(gap),
+                self.rounded_bird_velocity,
+                offset_from_gap_centre(upcoming[1]) if gap_after_next_known else 0,
+                1 if gap_after_next_known else 0,
+            ]
 
         # First observation on a given game
         return [
@@ -424,6 +440,8 @@ class Game:
             SCREEN_SIDE_LENGTH - BIRD_LEFT_COL_COORD,
             # Can't know as spawned after first observation, centre seems a
             # good a place as any for a single first obs
+            0,
+            0,
             0,
             0,
         ]
