@@ -272,7 +272,6 @@ class Game:
                 os.system("clear")
 
                 self.moves_thus_far.append(input_this_tick)
-                print(self.get_state())
                 self.on_tick(input_this_tick)
                 if self.detect_game_over() is True:
                     gameRunning = False
@@ -356,8 +355,8 @@ class Game:
 
     @staticmethod
     def create_game_over_screen(games: list["Game"]) -> list[list[RGB]]:
-    # LIME: this needs to change to three digits as bottom out max score to 999
-    # a few commits ago
+        # LIME: this needs to change to three digits as bottom out max score to 999
+        # a few commits ago
         game_over_screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
