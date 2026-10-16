@@ -399,7 +399,7 @@ Issues with the current approach I can see + things to consider going forward:
   need to commit before clearing the current gap.
 
 #### 3rd Entry - Overcoming the smallest gap (median of XXX, best of XXX, max score hit?)
-**Goal:** Get the model to conquer the hardest gap size and get scores in the triple figures
+**Goal:** Get the model to conquer the hardest gap size and get many scores in the triple figures
 against the 1000 seed test courses from 2nd journal entry.
 
 ##### 1. Increased discount factor
@@ -411,8 +411,19 @@ made below.
 - The offset for the gap after the next upcoming one, 0 when not on screen
 - A 1 or 0 that indicates if the gap after next is actually on the screen
 
-With the increased discount factor this pushed the median up to new max of 55 and new max of 98.
+With the increased discount factor this yieled a new high median up to new max of 55 and new max of 98.
+This disproved my theory in the 1st journal entry that observations of the gap after the upcoming would make
+little difference in the current game setup.
 
 If I were to change the rules of the game in the future to bring the obstacles closer
 together to the point where going through the middle of gaps may becomes sub optimal, these
-new observations will increase greatly in value.
+new observations will increase even more in value.
+
+##### 3. Extended the time in lowest gap further still
+The number of episodes is bumped from 10k to 25k and reduced the epsilon bottom
+by half to 0.005 and dropped the training to the last full 20% at the lowest epsilon.
+To get the agent even more time in the 50+ region, but this did increase training time by 4-5x.
+
+This bumped my median to 63 and my single best to 207. I still believe the real blocker here
+is the reward strategy approaching the narrowest gaps. Still, helpful to know that getting as much
+time in the final region does produce some meaningful difference.
