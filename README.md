@@ -398,9 +398,21 @@ Issues with the current approach I can see + things to consider going forward:
   wide gaps, but at 5 rows the centres can be ~30 rows apart and the bird may
   need to commit before clearing the current gap.
 
-#### 3rd Entry - Overcoming the smallest gap
+#### 3rd Entry - Overcoming the smallest gap (median of XXX, best of XXX, max score hit?)
 **Goal:** Get the model to conquer the hardest gap size and get scores in the triple figures
 against the 1000 seed test courses from 2nd journal entry.
 
+##### 1. Increased discount factor
+As discussed in previous journal reflection, a discount of 0.95 is a 20 tick lookahead.
+Whereas the new 0.98 has a 50 tick lookahead, which will go well with the next change to be
+made below.
 
-##### 1. 
+##### 2. Added two new observations
+- The offset for the gap after the next upcoming one, 0 when not on screen
+- A 1 or 0 that indicates if the gap after next is actually on the screen
+
+With the increased discount factor this pushed the median up to new max of 55 and new max of 98.
+
+If I were to change the rules of the game in the future to bring the obstacles closer
+together to the point where going through the middle of gaps may becomes sub optimal, these
+new observations will increase greatly in value.
