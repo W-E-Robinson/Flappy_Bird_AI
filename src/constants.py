@@ -8,7 +8,7 @@ BIRD_LEFT_COL_COORD = 9
 
 # Game Mechanics - to be tinkered with until game feels right
 MS_PER_GAME_TICK = 100
-MS_PER_REPLAY_TICK = 20
+MS_PER_REPLAY_TICK = 10
 GRAV_ACCELERATION_ROWS_PER_TICK_SQUARED = 1.2
 VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK = 4.0
 BIRD_SIZE = 3  # BIRD_SIZExBIRD_SIZE pixels
@@ -70,7 +70,7 @@ OUTPUT_SIZE = 2
 INPUT_FEATURES = 8
 
 # Training + Testing
-NUM_TRAINING_EPISODES = 10_000
+NUM_TRAINING_EPISODES = 25_000
 NUM_TEST_EPISODES = 1000
 # Test runs use seeds TEST_SEED_START..+NUM_TEST_EPISODES, so every model faces
 # the identical set of courses and the scores are comparable between runs
@@ -78,11 +78,11 @@ TEST_SEED_START = 0
 NUM_STEPS_TARGET_NETWORK_RESET = 1000
 LEARNING_RATE = 0.001
 START_EPSILON = 1.0
-FINAL_EPSILON = 0.01
+FINAL_EPSILON = 0.005
 # Fraction of the run spent decaying epsilon, so the remainder trains at the
 # floor. Decoupled from the episode count: a longer run buys more exploitation
 # episodes rather than a proportionally longer exploration phase.
-EPSILON_DECAY_FRACTION = 0.9
+EPSILON_DECAY_FRACTION = 0.8
 DISCOUNT_FACTOR = 0.98
 RUN_MODE = os.getenv("RUN_MODE", "RANDOM")  # RANDOM or TEST
 random.seed(666)
