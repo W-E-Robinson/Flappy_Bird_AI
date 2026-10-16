@@ -52,6 +52,11 @@ class Env(gym.Env):
             [bird_mid_row_min - gap_bottom_max, bird_mid_row_max - gap_top_min],
             # bird velocity, negative while rising
             [-BIRD_FLAP_RISE_ROWS, VERTITCAL_VELOCITY_CLAMP_ROWS_PER_TICK],
+            # offset from the centre of the gap after next, bounded as above
+            [bird_mid_row_min - gap_bottom_max, bird_mid_row_max - gap_top_min],
+            # whether the gap after next is on screen, so a 0 offset above is
+            # read as "unknown" rather than as "already lined up"
+            [0, 1],
         ]
 
         self._obs_low = np.array([r[0] for r in obs_space_ranges], dtype=np.float32)

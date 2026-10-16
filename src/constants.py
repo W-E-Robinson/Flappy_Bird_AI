@@ -65,8 +65,9 @@ HIDDEN_LAYER_SIZE = 64
 # Actions: input (bird moves up) or no input
 OUTPUT_SIZE = 2
 # Observables: bird top row, upcoming top gap row, upcoming botton gap row,
-# distance to upcoming gap col, offset from gap centre, bird velocity
-INPUT_FEATURES = 6
+# distance to upcoming gap col, offset from gap centre, bird velocity,
+# offset from the centre of the gap after next, whether that gap is on screen
+INPUT_FEATURES = 8
 
 # Training + Testing
 NUM_TRAINING_EPISODES = 10_000
