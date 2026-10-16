@@ -82,7 +82,7 @@ FINAL_EPSILON = 0.01
 # floor. Decoupled from the episode count: a longer run buys more exploitation
 # episodes rather than a proportionally longer exploration phase.
 EPSILON_DECAY_FRACTION = 0.9
-DISCOUNT_FACTOR = 0.95
+DISCOUNT_FACTOR = 0.98
 RUN_MODE = os.getenv("RUN_MODE", "RANDOM")  # RANDOM or TEST
 random.seed(666)
 TEST_OBSTACLE_DECIMALS = [random.uniform(0.0, 1.0) for _ in range(1005)]
