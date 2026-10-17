@@ -436,3 +436,9 @@ Hitting the spacebar rises the bird by 2, making it very easy whilst inside the 
 The tick before the obstacle s reached, if the bottom of the bird is 1 to 2 rows below the bottom of the gap and then spacebar is hit,
 this will be enough to carry it through the gap with no further input needed. The bird needs some foresight before this so that it can position itself in this correct
 spot 1 tick before the obstacle is reached, once it's too late it's too late. The bird takes 5 ticks to return to the same row from which the spacebar is hit with no flaps since. I will tinker with rewarding to encourage the bird to do this.
+
+umm the above might no even be achieveable = discuess what did instead
+    well it did, we did get improvements from the approach!!!
+
+Go for a change big enough to clear the noise — something you'd expect to move the median by 15+, not 5. Prioritised replay or n-step returns would be in that category; another reward tweak would not.
+this and drop epsilon too?
