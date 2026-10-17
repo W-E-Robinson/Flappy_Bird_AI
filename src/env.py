@@ -105,11 +105,9 @@ class Env(gym.Env):
 
         if state[3] > 6:
             # Encourage alignment with the centre of the gap on arrival
-            if abs(state[4]) == 0:  # LIME: refactor into dict, I change to abs too
+            if abs(state[4]) == 0:
                 reward += 0.2
             elif abs(state[4]) == 1:
-                # LIME: what if clipping bottom because starts to see next one?
-                # make it hug the top end more?
                 reward += 0.15
             elif abs(state[4]) == 2:
                 reward += 0.05
@@ -127,8 +125,6 @@ class Env(gym.Env):
                     reward += 0.2
                 else:
                     reward -= 0.2
-
-        # LIME: also need to account when inside the cap, offset is in the minuses?
 
         # Reward successfully passing the gap
         scored = self.game.score > self.prev_score

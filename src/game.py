@@ -355,8 +355,6 @@ class Game:
 
     @staticmethod
     def create_game_over_screen(games: list["Game"]) -> list[list[RGB]]:
-        # LIME: this needs to change to three digits as bottom out max score to 999
-        # a few commits ago
         game_over_screen = [
             [BACKGROUND_COLOUR for x in range(SCREEN_SIDE_LENGTH)]
             for y in range(SCREEN_SIDE_LENGTH)
@@ -409,7 +407,7 @@ class Game:
         # spawn every DISTANCE_BETWEEN_OBSTACLES ticks but stay ahead of the
         # bird for longer than that, so roughly half the time there is no gap
         # after next and 0 in 7) would otherwise read as "perfectly aligned"
-        bird_middle_row = self.bird_top_row_coord + 1  # LIME: magic number? 3x3
+        bird_middle_row = self.bird_top_row_coord + 1  # Assuming 3x3 bird
 
         def offset_from_gap_centre(gap):
             return bird_middle_row - round(
