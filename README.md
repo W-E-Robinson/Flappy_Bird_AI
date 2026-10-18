@@ -494,13 +494,13 @@ These are the fianl histogram results. The mean is well above my best, well into
 with one course in particular producing a huge score of 328.
 
 <div align="center">
-  <img src="placeholder" width="700" alt="Backup: assets/final_test_run_graph.png">
+  <img src="https://github.com/user-attachments/assets/4966fa8e-dd6e-4fd6-b552-50a252e8b3c8" width="700" alt="Backup: assets/final_test_run_graph.png">
 </div>
 
 Below is a video of the 328 score:
 
 <div align="center">
-  <video src="placeholder" controls width="300" muted alt="Backup: assets/best_eve_bot_run_speedup.mp4"></video>
+  <video src="https://github.com/user-attachments/assets/cf4704d1-b9e9-4559-b932-e295ea2552bd" controls width="300" muted alt="Backup: assets/best_eve_bot_run_speedup.mp4"></video>
 </div>
 
 One thing worh considering is that the bot had the time to decide its tick actoin, whereas with the 100ms tick time as a human my brain/thumb would hinder me in situations where decisions
