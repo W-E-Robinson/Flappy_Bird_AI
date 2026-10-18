@@ -1,12 +1,12 @@
 ## Flappy Bird AI
 
-Teaching a reinforcement learning agent to play Flappy Bird like CLI game, then it competing
-against myself. The game, the terminal renderer, and the training loop are all
+Teaching a reinforcement learning agent to play a Flappy Bird like CLI game, with it competing
+against my own best efforts. This is my effort trying reinforcement learning. The game, the terminal renderer, and the training loop are all
 built from scratch on top of [Gymnasium](https://gymnasium.farama.org/) and [PyTorch](https://pytorch.org/).
 
-**Aim: an agent that beats my own best score on the same test course.**
+**Aim: a model that beats my own best score on the a set competition course.**
 
-**Stretch Aim: an agent that maxes out the game at 999 score on a range of test courses.**
+**Stretch Aim: a model that maxes out the game at 999 score on a range of test courses.**
 
 ### Contents
 - [Intro](#intro)
@@ -18,7 +18,7 @@ built from scratch on top of [Gymnasium](https://gymnasium.farama.org/) and [PyT
 ### Intro
 Flappy Bird is a single button game: there are only two actions on any given tick
 (flap or do nothing), so the agent gets one decision per
-game tick, exactly like a human mashing the spacebar.
+game tick, like a human mashing the spacebar.
 
 The game runs in the terminal. The screen is a 40x40 grid of coloured blocks
 drawn with ANSI escape codes, the bird is a 3x3 square pinned to a fixed
@@ -34,7 +34,7 @@ The rules the agent and I both play by:
   every 10 points down to a floor of 5 rows. So the game gets harder the better
   you do.
 - Touching the ceiling or the floor ends the run, as does overlapping an obstacle.
-- The score caps out at 9,999.
+- The score caps out at 999.
 - Game tick is every 100ms (this only applies to me as agent triggers the game tick itself)
 
 <div align="center">
@@ -52,22 +52,37 @@ overlap is magenta.
 
 ### How it works
 - **Game** (`game.py`) - the bird, gravity, obstacles, collision detection,
-  scoring, the terminal renderer, and the human input loop.
+  scoring, the terminal renderer, and the human input loop. A course can be
+  seeded, so the same seed always generates the same obstacles.
 - **Environment** (`env.py`) - a Gymnasium `Env` wrapping the game. It defines
   what the agent observes, the two actions it can take, and the reward it gets.
+  A seed passed to `reset` reaches the course as well as Gymnasium's own RNG.
 - **Agent** (`agent.py`) - picks an action from a given state (ε-greedy over the
   Q-network) and learns from the reward, with a target network to stabilise the
-  updates.
+  updates. Trains on random batches from the replay buffer rather than on the
+  tick that just happened.
+- **Replay buffer** (`replay_buffer.py`) - a fixed size FIFO of past
+  transitions, sampled at random. Decorrelates consecutive ticks and keeps rare
+  but informative transitions, deaths especially, available to learn from more
+  than once.
 - **Network** (`network.py`) - the model the agent uses to guide its decisions.
-- **Training** (`train.py`) - runs episodes, updates the model, and saves a
-  timestamped checkpoint of the training session to `src/__models__/`.
-- **Testing** (`test.py`) - loads the latest model, evaluates it over many
-  attempts on the seeded course, and records the best run's moves to
-  `src/latest_best_run.txt`.
+- **Training** (`train.py`) - runs episodes, updates the model, saves a
+  timestamped checkpoint to `src/__models__/` and the per episode scores to
+  `src/scores_last_test_session.txt`.
+- **Testing** (`test.py`) - loads the latest model and plays it at ε=0 over
+  `NUM_TEST_EPISODES` seeded courses, so every model faces the identical set and
+  scores are comparable between runs. Reports the distribution rather than just
+  the best, writes every score to `src/scores_last_test_run.txt`, and records
+  the best run to `src/latest_best_run.txt`, plus `src/best_bot_run.txt` if it
+  beats the best ever.
 - **Playing** (`play.py`) - play it yourself with the spacebar. A personal best
   in `TEST` mode is recorded to `src/best_human_run.txt`.
 - **Replaying** (`replay.py`) - replays recorded runs tick for tick: the bot,
-  me, or both racing on the same screen.
+  me, or both racing on the same screen. A run stores the seed it was scored on
+  alongside its moves, so the exact course is rebuilt to replay against.
+- **Graphing** (`graph.py`) - saves a timestamped PNG to `src/__graphs__/`:
+  either score per episode across a training session, or the distribution of
+  scores across a test run.
 
 ### Layout
 ```
@@ -81,9 +96,13 @@ src/
   test.py              # Evaluation entrypoint
   play.py              # Human play entrypoint
   replay.py            # Replay / race entrypoint
+  replay_buffer.py     # Experience replay buffer
   graph.py             # Graphs of recorded scores
   best_human_run.txt   # Best human run (score + move per tick)
-  latest_best_run.txt  # Best bot run (score + move per tick)
+  best_bot_run.txt     # Best bot run ever (score + seed + move per tick)
+  latest_best_run.txt  # Best bot run of the last test (score + seed + moves)
+  scores_last_test_session.txt  # Score per episode, last training session
+  scores_last_test_run.txt      # Score per course, last test run
   __models__/          # Saved model checkpoints (.pt)
   __graphs__/          # Saved graphs (.png)
 ```
@@ -100,20 +119,40 @@ make requirements
 # Play it yourself (random obstacles)
 make play
 
-# Play the seeded course the bot is scored on, recording a personal best
+# Play the fixed course, recording a personal best to best_human_run.txt
 make play-test
 
 # Train a model (saves to src/__models__/<timestamp>-<episodes>.pt)
 make train-model
 
-# Evaluate the latest saved model, recording its best run
+# Evaluate the latest model over 1000 seeded courses, reporting the
+# distribution and recording its best run with the seed it scored on
 make test-model
 
-# Watch a recorded run back: the bot, me, or both racing
-make replay-model
+# Both, back to back
+make train-test-model
+
+# Watch a recorded run back: the latest bot run, the best ever, me,
+# or the bot and me racing side by side
+make replay-latest-model
+make replay-best-ever
 make replay-human
 make replay-both
+
+# Graph the last training session, or the last test run's distribution
+make graph-session
+make graph-test-run
+
+# Housekeeping
+make unit-test     # run the tests
+make style         # format with black, then type check with pyright
+make clear-models  # delete saved checkpoints
 ```
+
+Note that `make play-test` puts you on the fixed `RUN_MODE=TEST` course, while
+the bot is now scored on seeded courses, so the two are no longer the same
+obstacles. `make replay-both` races runs recorded against different courses for
+the same reason.
 
 ### Project Journal
 A running log of what I tried, what broke, mistakes made, and what I learned.
@@ -149,7 +188,7 @@ if died:
 - Target network resynced every 1000 steps, so the step that pulls the estimate
   toward the goalpost isn't also moving the goalpost.
 
-**Results:** Best of 1000 test episodes scored **17**. My own best on the same
+**Results:** Best test episode score is **17**. My own best on the same
 seeded course is **50**, so it is playing the game but it is not beating me yet.
 Below is a recording of the bot (blue) playing alongside me (red). Any overlap
 shows magenta and the recording runs at 5x playing speed.
@@ -221,15 +260,15 @@ completely different decision.
 ##### 3. The rewards were quietly rewarding the wrong thing
 This was the real problem, and there were three separate bugs:
 
-- The alignment reward was keyed on `state[0]`, the bird's **absolute row**,
+- The alignment reward was keyed on `state[0]`, the bird's absolute row,
   not its offset from the gap. So it only paid out at rows 0, 1 and 2, which is
   jammed against the ceiling, and a perfectly centred bird got punished. It was
   training the bird to fly into the roof, **facepalm**.
 - The +20 for clearing a gap checked `state[3] == 19`, but the distance resets
-  to **17** when the next gap appears (due to bird size of 3). That line had never once executed. The
+  to 17 when the next gap appears (due to bird size of 3). That line had never once executed. The
   single most informative reward in the whole function was dead code.
 - Death was reported as `truncated` rather than `terminated`, so the Q update
-  bootstrapped *through* the wall: the target on a death was
+  bootstrapped through the wall: the target on a death was
   `-100 + 0.95 * max Q(state_after_dying)`, which partly cancelled out the
   punishment with a garbage value for a state that does not exist.
 
@@ -238,15 +277,15 @@ Raw observations spanned 0-38 for the row features but only 0-4 for velocity,
 so velocity was effectively invisible next to everything else. Everything now
 gets scaled to `[-1, 1]`.
 
-I also gave the velocity a **sign** while I was in there. It was an unsigned
+I also gave the velocity a sign while I was in there. It was an unsigned
 magnitude with the direction tracked separately and never passed on, so rising
 at 2 rows/tick and falling at 2 rows/tick looked identical to the network.
 
 ##### 5. Rescaling the rewards
 Went from `+5 / +20 / -100` to roughly `+0.2 / +1 / -5`.
 
-The thing the network predicts is not a single tick's reward, it is the *total
-reward it expects from here on*. With a discount of 0.95 that works out at
+The thing the network predicts is not a single tick's reward, it is the total
+reward it expects from here on. With a discount of 0.95 that works out at
 roughly the next 20 ticks added together, so under the old scale it was being
 asked to output numbers as big as about 130.
 
@@ -257,9 +296,9 @@ own output range by a factor of 250, which is pure wasted effort.
 Shrinking the rewards keeps the predictions in a range the network can produce
 from the start, and nothing about the decision changes.
 
-One trap here I nearly walked into: the rescale has to stay **proportional**.
+One trap here I nearly walked into: the rescale has to stay proportional.
 My first pass divided the alignment rewards by 20 and the death penalty by 100,
-which made dying (-1) *cheaper* than drifting misaligned for 20 ticks (-2). It
+which made dying (-1) cheaper than drifting misaligned for 20 ticks (-2). It
 would have learned to crash on purpose as an escape from accrued negative
 reward. The death penalty is -5 for exactly this reason.
 
@@ -290,13 +329,10 @@ instead of learning once from the tick that just happened and throwing it away.
   better the bird gets. At 300+ ticks an episode a death is well under 1% of the
   data. The buffer keeps a standing reservoir of them to sample from.
 
-Measured over a test run, each stored transition ends up being learned from
-about **64 times** rather than once.
-
 ##### 7. A bigger network
 32 hidden units in a single layer, up to 64 in two layers (290 parameters to
 4,738). Judging whether the bird clears a gap means composing position,
-velocity and ticks-remaining into a trajectory, which needs *products* of the
+velocity and ticks-remaining into a trajectory, which needs products of the
 inputs. One ReLU layer approximates those badly.
 
 
@@ -308,7 +344,7 @@ The first problem was the floor of 0.1, which sounds harmless and really is not.
 
 Epsilon 0.1 means 10% of ticks take a random action. But there are only two
 actions to pick from, so half the time that random pick lands on the one it was
-going to choose anyway. The chance of actually being *dragged off course* on
+going to choose anyway. The chance of actually being dragged off course* on
 any single tick is therefore `0.1 / 2 = 5%`.
 
 A gap takes about 20 ticks to fly through, and clearing it means getting near all 20
@@ -319,12 +355,12 @@ which is 95% multiplied by itself 20 times:
 P(knocked off course at least once) = 1 - 0.95^20 = 0.64
 ```
 
-**So a 64% chance of being thrown off in any given gap.** The agent was never
+So a 64% chance of being thrown off in any given gap.** e agent was never
 getting a fair run at a single obstacle. Dropping the floor to 0.01 gives
 `1 - 0.995^20 = 0.095`, so about 10% instead.
 
 This is also why my training graphs always looked worse than the model really
-was. Those scores are recorded *with* exploration still switched on, whereas
+was. Those scores are recorded with exploration still switched on, whereas
 the test run plays at epsilon 0.
 
 The second problem was that the decay was derived from the episode count, so it
@@ -344,12 +380,12 @@ most of the time and not learn how to handle these.
 ##### 9. Testing properly: 1000 seeded courses
 The old test loop ran 1000 episodes with `RUN_MODE=TEST`, which uses a fixed
 list of obstacle positions. Since the model is deterministic at epsilon 0, that
-was **1000 identical replays of the same game**. It reported exactly the same
+was 1000 identical replays of the same game, **second facepalm**. It reported exactly the same
 score every time and I was reading it as a distribution, not very good.
 
 Courses are now seedable. The test run plays seeds 0-999, so every model faces
-the identical set of 1000 *different* courses and the numbers are comparable
-between runs. It reports the median as the most important statistic.
+the identical set of 1000 different courses and the numbers are comparable
+between runs. It reports the median  and means as the most important statistics, as well as single highest score.
 
 The seed also gets stored alongside the moves in the best run files, which
 means a recorded run can be rebuilt exactly for replay. Before this, saved
@@ -359,7 +395,7 @@ moves only reproduced against whatever course happened to be generated next.
   <img src="https://github.com/user-attachments/assets/bfd98883-bfd8-451c-abe3-1276218409a1" width="700" alt="Backup: assets/2nd_entry_score_histogram.png">
 </div>
 
-**Results:** Over 1000 seeded courses the model now scores a **median of 53**,
+Results: Over 1000 seeded courses the model now scores a **median of 53**,
 a mean of 54.13, a best of **93** and, notably, **zero failures**, with the
 worst course of the thousand still reaching 41. Last entry's best single run
 was 17. My own best is 50, so it is now comfortably past me.
@@ -385,7 +421,7 @@ Issues with the current approach I can see + things to consider going forward:
   that was already within 1 row of the centre. A flap moves it 2 rows instantly
   and the survivable window at a 5 row gap is 1 row either side, so flapping on
   final approach is fatal even from a perfect position. The reward pays for
-  alignment *right now*, but what matters is alignment *on arrival*. Shaping on
+  alignment right now, but what matters is alignment on arrival. Shaping on
   projected arrival position instead is the obvious next experiment.
 - A discount of 0.95 is a 20 tick lookahead, incidentally is almost exactly one gap.
   Threading through 5 row gaps is a timing problem that needs planning across the
@@ -395,10 +431,10 @@ Issues with the current approach I can see + things to consider going forward:
   late training experience is the agent learning from deaths it is pushed towards. Making even lower on the final stretch may help.
 - The agent still only sees one obstacle ahead. I argued last entry that the
   obstacle spacing makes this a non issue, and I still think that is true at
-  wide gaps, but at 5 rows the centres can be ~30 rows apart and the bird may
+  wide gaps, but at 5 rows the centres can be ~30 units apart and the bird may
   need to commit before clearing the current gap.
 
-#### 3rd Entry - Overcoming the smallest gap (median of XXX, best of XXX, max score hit?)
+#### 3rd Entry - Overcoming the smallest gap (median of 73, mean of 83, best of 328)
 **Goal:** Get the model to conquer the hardest gap size and get many scores in the triple figures
 against the 1000 seed test courses from 2nd journal entry.
 
@@ -433,12 +469,44 @@ When I arbitrarily made the smallest gap possible on the course 5 I unknowingly 
 
 The bird takes 3 ticks between starting the obstacle to clearing it.
 Hitting the spacebar rises the bird by 2, making it very easy whilst inside the gap to do this and hit the top of it.
-The tick before the obstacle s reached, if the bottom of the bird is 1 to 2 rows below the bottom of the gap and then spacebar is hit,
+The tick before the obstacle is reached, if the bottom of the bird is 1 to 2 rows below the bottom of the gap and then spacebar is hit,
 this will be enough to carry it through the gap with no further input needed. The bird needs some foresight before this so that it can position itself in this correct
 spot 1 tick before the obstacle is reached, once it's too late it's too late. The bird takes 5 ticks to return to the same row from which the spacebar is hit with no flaps since. I will tinker with rewarding to encourage the bird to do this.
 
-umm the above might no even be achieveable = discuess what did instead
-    well it did, we did get improvements from the approach!!!
+After experimenting with the reward structure I found the best success concerning approach by doing:
+```python
+if state[3] == 6:
+    if state[0] == state[2] + 1 or state[0] == state[2] + 2:
+        reward += 0.2
+    else:
+        reward -= 0.2
+if state[3] == 1:
+    if state[0] == state[2] + 1 or state[0] == state[2] + 2:
+        reward += 0.2
+    else:
+        reward -= 0.2
+```
+Where state[3] if the distance to the next column, this encourages a flap with 6 ticks to go from the obstacle
+with the bird either 1 or 2 rows overlapping the bottom of the gap. To then be in the same place 5 ticks later
+to then flap again and clear the gap.
 
-Go for a change big enough to clear the noise — something you'd expect to move the median by 15+, not 5. Prioritised replay or n-step returns would be in that category; another reward tweak would not.
-this and drop epsilon too?
+These are the fianl histogram results. The mean is well above my best, well into the hardest region, many runs over 100,
+with one course in particular producing a huge score of 328.
+
+<div align="center">
+  <img src="placeholder" width="700" alt="Backup: assets/final_test_run_graph.png">
+</div>
+
+Below is a video of the 328 score:
+
+<div align="center">
+  <video src="placeholder" controls width="300" muted alt="Backup: assets/best_eve_bot_run_speedup.mp4"></video>
+</div>
+
+One thing worh considering is that the bot had the time to decide its tick actoin, whereas with the 100ms tick time as a human my brain/thumb would hinder me in situations where decisions
+needed to be made quickly. Having said that, even with a level decision time playing field, I think the models ability to have forsight 6 ticks out from an obstacle would still give it
+the ultimate advantage over me.
+
+I'm happy this being the final journal entry on this project, despite not having reached my stretch goal of a 999 max score runs from a model.
+I do have some ideas for improvement such as prioritised replay. However, I have learnt more than I thought I would from this first project dabbling 
+in reinforcement learning and want to move onto other more interesting projects, may be I will return one day.
